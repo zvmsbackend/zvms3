@@ -1,0 +1,8 @@
+{% extends "zvms/base.html" %}
+{% block container %}
+<ul class="list-group">
+{% for id, name in members %}
+<li class="list-group-item"><a href="/user/{{id}}">{{name}}</a></li>
+{% endfor %}
+</ul>
+{% endblock %}

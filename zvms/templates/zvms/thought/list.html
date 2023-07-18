@@ -1,0 +1,17 @@
+{% extends "zvms/base.html" %}
+{% from "util.html" import pagination %}
+{% block container %}
+{% for userid, username, volid, volname, status, badge in data %}
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title"><a href="/volunteer/{{volid}}">{{volname}}</a></h5>
+        <h6 class="card-subtitle mb-2 text-muted"><a href="/user/{{userid}}">{{username}}</a></h6>
+        <a href="/thought/{{volid}}/{{userid}}">查看</a>
+        <div class="card-footer">
+            <span class="badge bg-{{badge}}">{{status}}</span>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{{pagination(base_url, page, pages, total)}}
+{% endblock %}

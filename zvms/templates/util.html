@@ -1,0 +1,28 @@
+{% macro pagination(base_url, page, pages, total) %}
+<ul class="pagination">
+    <li class="page-item"><a class="page-link" href="{{base_url}}?page=0">首页</a></li>
+    {% for i in pages %}
+    <li class="page-item{{' active' if i == page else ''}}"><a class="page-link" href="{{base_url}}?page={{i}}">{{i + 1}}</a></li>
+    {% endfor %}
+    <li class="page-item"><a class="page-link" href="{{base_url}}?page={{(total - 1) // 10}}">尾页</a></li>
+    <li class="page-item">共{{(total - 1) // 10}}页, {{total}}项</li>
+</ul>
+<form accept="base_url">
+    <div class="row">
+    <div class="col-3">
+        <input class="form-control" type="number" name="page" placeholder="输入页数">
+    </div>
+    <div class="col">
+        <button class="btn btn-primary" type="submit">跳转</button>
+    </div>
+    </div>
+</form>
+{% endmacro %}
+{% macro vol_types() %}
+{% for value, text in varargs %}
+<div class="form-check">
+    <input class="form-check-input" type="radio" name="type" id="type-{{value}}" value="{{value}}">
+    <label class="form-check-label" for="type-{{value}}">{{text}}</label>
+</div>
+{% endfor %}
+{% endmacro %}

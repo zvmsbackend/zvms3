@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}镇海中学义工管理系统{% endblock %}
+{% block nav %}
+<div class="flex-shrink-0 p-3" style="width: 280px;">
+    <a href="#" class="d-flex align-items-center pb-3 mb-3 link-body-emphasis text-decoration-none border-bottom">
+        <svg class="bi pe-none me-2" width="30" height="24"><use xlink:href="#bootstrap"></use></svg>
+        <span class="fs-5 fw-semibold">ZVMS</span>
+    </a>
+    <ul class="list-unstyled ps-0">
+        <li class="mb-1">
+            <a class="link-body-emphasis d-inline-flex text-decoration-none rounded" href="/user/{{_userid}}">主页</a>
+        </li>
+        <li class="mb-1">
+            <a class="link-body-emphasis d-inline-flex text-decoration-none rounded" href="/user/class/list">班级列表</a>
+        </li>
+        <li class="mb-1">
+            <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#view-volunteers-collapse" aria-expanded="false">
+                查看义工
+            </button>
+            <div class="collapse" id="view-volunteers-collapse">
+                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                    <li><a href="/volunteer/list" class="link-body-emphasis d-inline-flex text-decoration-none rounded">义工列表</a></li>
+                    <li><a href="/volunteer/me" class="link-body-emphasis d-inline-flex text-decoration-none rounded">我的义工</a></li>
+                </ul>
+            </div>
+        </li>
+        <li class="mb-1">
+            <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#create-volunteer-collapse" aria-expanded="false">
+                创建义工
+            </button>
+            <div class="collapse" id="create-volunteer-collapse">
+                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                    {% if Permission.MANAGER.authorized(_permission) %}
+                    <li><a href="/volunteer/create" class="link-body-emphasis d-inline-flex text-decoration-none rounded">校内义工</a></li>
+                    {% endif %}
+                    <li><a href="/volunteer/create/appointed" class="link-body-emphasis d-inline-flex text-decoration-none rounded">指定义工</a></li>
+                    {% if Permission.MANAGER.authorized(_permission) %}
+                    <li><a href="/volunteer/create/special" class="link-body-emphasis d-inline-flex text-decoration-none rounded">特殊义工</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </li>
+        <li class="mb-1">
+            <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#thought-collapse" aria-expanded="false">
+                感想
+            </button>
+            <div class="collapse" id="thought-collapse">
+                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                    <li><a href="/thought/me" class="link-body-emphasis d-inline-flex text-decoration-none rounded">我的感想</a></li>
+                    {% if Permission.AUDITOR.__or__(Permission.MANAGER).authorized(_permission) %}
+                    <li><a href="/thought/list" class="link-body-emphasis d-inline-flex text-decoration-none rounded">感想列表</a></li>
+                    <li><a href="/thought/unaudited" class="link-body-emphasis d-inline-flex text-decoration-none rounded">未审核感想</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </li>
+        <li class="mb-1">
+            <a class="link-body-emphasis d-inline-flex text-decoration-none rounded" href="/about">关于</a>
+        </li>
+        <li class="border-top my-3"></li>
+        <li class="mb-1">
+            <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#account-collapse" aria-expanded="false">
+                账户
+            </button>
+            <div class="collapse" id="account-collapse">
+            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                {% if Permission.MANAGER.authorized(_permission) %}
+                <li><a href="/management" class="link-dark d-inline-flex text-decoration-none rounded">后台管理</a></li>
+                {% endif %}
+                {% if Permission.ADMIN.authorized(_permission) %}
+                <li><a href="/admin" class="link-dark d-inline-flex text-decoration-none rounded">系统管理</a></li>
+                {% endif %}
+                <li><a href="/user/logout" class="link-dark d-inline-flex text-decoration-none rounded">登出</a></li>
+            </ul>
+            </div>
+        </li>
+    </ul>
+</div>
+{% endblock %}

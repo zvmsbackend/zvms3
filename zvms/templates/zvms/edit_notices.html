@@ -1,0 +1,76 @@
+{% extends "zvms/base.html" %}
+
+{% block container %}
+{% if notices %}
+{% for id, title, content, senderid, sender, targets in notices %}
+<form method="POST">
+    <input type="hidden" name="noticeid" value="{{id}}">
+    {% if targets %}
+    <div class="row">
+        <div class="col-8">
+            通知发送给了:
+        </div>
+        <div class="col">
+            <button class="btn btn-primary targets-adder" type="button" notice-id="{{id}}">添加</button>
+        </div>
+    </div>
+    <div class="form-group targets-{{id}}">
+    {% for i, (userid, username) in targets %}
+    {% if i == 0 %}
+    {{username}}
+    <input class="form-control" type="text" name="targets" value="{{userid}}" required>
+    {% else %}
+    <div class="row" id="target-{{i}}">
+        {{username}}
+        <div class="col-8">
+            <input class="form-control" type="text" name="targets" value="{{userid}}" required>
+        </div>
+        <div class="col">
+            <button class="btn btn-danger" type="button" onclick="document.getElementById('target-{{i}}').remove()">删除</button>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+    </div>
+    <br>
+    {% endif %}
+    <input class="form-control" type="text" id="title" name="title" value="{{title}}" maxlength="32" required>
+    <textarea class="form-control" name="content" rows="10">{{content}}</textarea>
+    <p><small>来自 <a href="/user/{{senderid}}">{{sender}}</a></small></p>
+    <button class="btn btn-primary" type="submit">修改</button>
+</form>
+<form action="/management/delete-notice" method="POST">
+    <input type="hidden" name="noticeid" value="{{id}}">
+    <button class="btn btn-danger" type="submit">删除</button>
+</form>
+<hr>
+{% endfor %}
+<script>
+    let targetsCount = {{targets|length}};
+</script>
+<script>
+    for (const adder of document.querySelectorAll('button.targets-adder')) {
+        const noticeId = adder.getAttribute('notice-id');
+        const targets = document.querySelector(`div.targets-${noticeId}`);
+        adder.addEventListener('click', (e) => {
+            targets.append(util.createElement(
+                'div',
+                {
+                    class: 'row',
+                    id: `target-${targetsCount}`
+                },
+                `<div class="col-8">
+                    <input class="form-control" type="text" name="targets" required>
+                </div>
+                <div class="col">
+                    <button class="btn btn-danger" type="button" onclick="document.getElementById('target-${targetsCount}').remove()">删除</button>
+                </div>`
+            ));
+            targetsCount++;
+        });
+    }
+</script>
+{% else %}
+你还没有发送过通知
+{% endif %}
+{% endblock %}

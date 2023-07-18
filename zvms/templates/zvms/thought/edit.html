@@ -1,0 +1,51 @@
+{% extends "zvms/base.html" %}
+{% block container %}
+<h2>{{name}}</h2>
+<span class="badge bd-{{status.badge()}}">{{status}}</span>
+<form action="/thought/{{volid}}/{{userid}}/edit" method="POST" enctype="multipart/form-data">
+    <div class="form-group">
+        <label class="form-label" for="thought">输入感想</label>
+        <textarea class="form-control" name="thought" id="thought" rows="10">{{thought}}</textarea>
+    </div>
+    <div class="row">
+        <div class="col-8">
+            <p>从已有的图片中选择</p>
+            {% for i, (filename, used) in pictures %}
+            <img src="/static/pictures/{{filename}}" class="img-thumbnail">
+            <input type="hidden" name="{{'pictures' if used else ''}}" id="input-{{i}}" value="filename">
+            <button class="btn btn-{{'danger' if used else 'primary'}}" type="button" id="btn-{{i}}" onclick="selectImage({{i}})">
+                {{'取消选择' if used else '选择'}}
+            </button>
+            {% endfor %}
+        </div>
+        <div class="col">
+            <p>或者, 从本地上传(可多选)</p>
+            <input class="form-control" type="file" name="files" accept="image/*" multiple>
+        </div>
+    </div>
+    {% if status == 2 %}
+    <div class="form-check">
+        <input class="form-check-input" type="radio" name="submit" id="submit" value="1">
+        <label class="form-check0label" for="submit">提交(提交后会被审核)</label>
+    </div>
+    {% else %}
+    <input type="hidden" name="submit" value="">
+    {% endif %}
+    <button class="btn btn-primary" type="submit">确定</button>
+</form>
+<script>
+    function selectImage(i) {
+        const input = document.getElementById(`input-${i}`);
+        const btn = document.getElementById(`btn-${i}`);
+        if (input.getAttribute('name') === '') {
+            input.setAttribute('name', 'pictures');
+            btn.innerText = '取消选择';
+            btn.className = 'btn btn-danger';
+        } else {
+            input.setAttribute('name', '');
+            btn.innerText = '选择'
+            btn.className = 'btn btn-primary';
+        }
+    }
+</script>
+{% endblock %}

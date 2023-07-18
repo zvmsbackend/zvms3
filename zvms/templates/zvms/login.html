@@ -1,0 +1,16 @@
+{% extends "zvms/base.html" %}
+{% block container %}
+<div class="col-md-10 mx-auto col-lg-5">
+    <form class="p-4 p-md-5 border rounded-3 bg-body-tertiary" method="POST">
+        <div class="form-floating mb-3">
+            <input type="test" class="form-control" id="userident" name="userident" placeholder="张三/20221145">
+            <label for="userident">输入用户名或ID</label>
+        </div>
+        <div class="form-floating mb-3">
+            <input type="password" class="form-control" id="password" name="password" placeholder="密码">
+            <label for="password">密码</label>
+        </div>
+        <button class="w-100 btn btn-lg btn-primary" type="submit">登录</button>
+    </form>
+</div>
+{% endblock %}

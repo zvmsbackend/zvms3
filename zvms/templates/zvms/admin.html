@@ -1,0 +1,42 @@
+{% extends "zvms/base.html" %}
+{% block container %}
+<form action="/admin/permission" method="POST">
+    <div class="form-group">
+        <label class="form-label" for="userident">输入用户名或ID</label>
+        <input class="form-control" type="text" id="userident" name="userident" placeholder="用户名或ID">
+    </div>
+    {% for value, name in permission2str.items() %}
+    {% if value != Permission.ADMIN %}
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="check-{{value.value}}" name="perm" value="{{value.value}}">
+        <label class="form-check-label" for="check-{{value.value}}">{{name}}</label>
+    </div>
+    {% endif %}
+    {% endfor %}
+    <button class="btn btn-primary" type="submit">修改用户权限</button>
+</form>
+<hr>
+<form action="/admin/login" method="POST">
+    <div class="form-group">
+        <label class="form-label" for="userident">输入用户名或ID</label>
+        <input class="form-control" type="text" id="userident" name="userident" placeholder="用户名或ID">
+    </div>
+    <button class="btn btn-primary" type="submit">登录</button>
+</form>
+<h3>HTML编辑器</h3>
+<div class="row">
+    <div class="col">
+        <pre><textarea class="form-control" id="input" rows="10"></textarea></pre>
+    </div>
+    <div class="col" id="output"></div>
+</div>
+<button class="btn btn-primary" type="button" id="confirm">确定</button>
+<hr>
+<script>
+    const input = document.getElementById("input");
+    const output = document.getElementById("output");
+    document.getElementById('confirm').addEventListener('click', (e) => {
+        output.innerHTML = input.value;
+    });
+</script>
+{% endblock %}

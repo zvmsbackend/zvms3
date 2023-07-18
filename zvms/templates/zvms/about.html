@@ -1,0 +1,44 @@
+{% extends "zvms/base.html" %}
+{% block container %}
+<style>
+    .f {
+        font-weight: 900;
+        font-size: x-large;
+    }
+</style>
+<h1>关于ZVMS</h1>
+<p style="font-size: medium">
+    <span class="f">Z</span>henhai High School
+    <span class="f">V</span>olunteer
+    <span class="f">M</span>anagement
+    <span class="f">S</span>ystem
+</p>
+<h2>关于开发者</h2>
+<p>本项目由 <small><a id="a"><small>qnc</small></a></small> 开发</p>
+{% if _login %}
+<form action="/issue" method="POST">
+    <div class="form-group">
+        <label class="form-label" for="content">反馈:</label>
+        <input class="form-control" type="text" name="content" id="content" placeholder="输入反馈" maxlength="64" required>
+    </div>
+    <button class="btn btn-primary" type="submit" id="submit">提交反馈</button>
+</form>
+<p>你今天还能提交{{5 - issues_today}}条反馈</p>
+<h2>已提交的反馈</h2>
+<ul class="list-group">
+    {% for time, content in issues_posted %}
+    <li class="list-group-item">{{time}} {{content}}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+<script>
+    const a = document.getElementById('a');
+    let counter = 0;
+    a.addEventListener('click', (e) => {
+        counter++;
+        if (counter == 19) {
+            a.setAttribute('href', '/toolkit');
+        }
+    });
+</script>
+{% endblock %}
