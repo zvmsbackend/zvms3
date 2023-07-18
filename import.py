@@ -7,15 +7,15 @@ import csv
 def generate_password(length: int) -> str:
     md5 = hashlib.md5()
     md5.update(random.randbytes(8))
-    return md5.hexdigest()
+    return md5.hexdigest()[:length]
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--classes', default='classes.csv')
-    parser.add_argument('-u', '--users', default='users.csv')
-    parser.add_argument('-p', '--password-length', type=int, default=8)
-    parser.add_argument('-o', '--output-password', default='password.csv')
-    parser.add_argument('-a', '--admin', type=int, nargs='?')
+    parser.add_argument('-c', '--classes', default='classes.csv', help='班级的csv文件')
+    parser.add_argument('-u', '--users', default='users.csv', help='用户的csv文件')
+    parser.add_argument('-p', '--password-length', type=int, default=8, help='初始密码的长度(1..32)')
+    parser.add_argument('-o', '--output-password', default='password.csv', help='输出的密码csv文件文件名')
+    parser.add_argument('-a', '--admin', type=int, nargs='*', help='设为超管的账户ID(若不指定, 则不设置超管)')
     args = parser.parse_args()
     classes = list(csv.reader(open(args.classes, encoding='utf-8')))[1:]
     users = list(csv.reader(open(args.users, encoding='utf-8')))[1:]
@@ -27,7 +27,7 @@ def main():
         classes
     )
     users = [
-        (id, name, generate_password(), cls)
+        (id, name, generate_password(args.password_length), cls)
         for id, name, cls in users
     ]
     cursor.executemany(
@@ -42,11 +42,13 @@ def main():
         )
     )
     if args.admin is not None:
-        cursor.execute(
-            'UPDATE user SET permission = permission & 16 '
+        cursor.executemany(
+            'UPDATE user SET permission = 16 '
             'WHERE userid = ?',
-            (args.admin)
+            [(i,) for i in args.admin]
         )
+    connection.commit()
+    connection.close()
 
 if __name__ == '__main__':
     main()
