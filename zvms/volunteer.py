@@ -206,9 +206,10 @@ def create_volunteer(
             return render_template('zvms/error.html', msg='班级{}的人数溢出'.format(classid))
     execute_sql(
         'INSERT INTO volunteer(name, description, status, holder, type, reward, time) '
-        'VALUES(:name, :description, 2, :holder, 1, :reward, :time)',
+        'VALUES(:name, :description, :status, :holder, 1, :reward, :time)',
         name=name,
         description=description,
+        status=VolStatus.ACCEPTED if (Permission.CLASS | Permission.MANAGER).authorized() else VolStatus.UNAUDITED,
         holder=session.get('userid'),
         reward=reward,
         time=time
@@ -307,8 +308,9 @@ def create_special_volunteer(
     userids = username2userid(joiners)
     execute_sql(
         'INSERT INTO volunteer(name, description, status, holder, time, type, reward) '
-        'VALUES(:name, :name, 2, :holder, DATE(\'now\'), :type, :reward)',
+        'VALUES(:name, :name, :status, :holder, DATE(\'now\'), :type, :reward)',
         name=name,
+        status=VolStatus.SPECIAL,
         holder=session.get('userid'),
         type=type,
         reward=0
@@ -317,9 +319,10 @@ def create_special_volunteer(
     for userid, reward in zip(userids, rewards):
         execute_sql(
             'INSERT INTO user_vol(userid, volid, status, thought, reward) '
-            'VALUES(:userid, :volid, 5, \'\', :reward)',
+            'VALUES(:userid, :volid, :status, \'\', :reward)',
             userid=userid,
             volid=volid,
+            status=ThoughtStatus.ACCEPTED,
             reward=reward
         )
     return redirect('/volunteer/{}'.format(volid))
@@ -372,8 +375,9 @@ def rollback_volunteer_signup(id: int, userid: int):
 def accept_volunteer_signup(id: int, userid: int):
     test_signup(userid, id)
     execute_sql(
-        'UPDATE user_vol SET status = 2 WHERE userid = :userid AND volid = :volid',
+        'UPDATE user_vol SET status = :status WHERE userid = :userid AND volid = :volid',
         volid=id,
+        status=VolStatus.ACCEPTED,
         userid=userid
     )
     return redirect('/volunteer/{}'.format(id))

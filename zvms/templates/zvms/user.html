@@ -20,55 +20,55 @@
     </tbody>
 </table>
 {% if is_self %}
-<form action="/user/modify-password" method="POST" id="modify-password">
-    <input type="hidden" name="target" value="{{userid}}">
-    <div class="form-group">
-        <label class="form-label" for="old">输入旧密码</label>
-        <input class="form-control" type="password" id="old" name="old" placeholder="旧密码" required>
+<ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#password-tab-pane" type="button" role="tab" aria-controls="password-tab-pane" aria-selected="true">修改密码</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#notice-tab-pane" type="button" role="tab" aria-controls="notice-tab-pane" aria-selected="false">查看通知</button>
+    </li>
+</ul>
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="password-tab-pane" role="tabpanel" aria-labelledby="password-tab" tabindex="0">
+        <form action="/user/modify-password" method="POST" id="modify-password">
+            <input type="hidden" name="target" value="{{userid}}">
+            <div class="form-group">
+                <label class="form-label" for="old">输入旧密码</label>
+                <input class="form-control" type="password" id="old" name="old" placeholder="旧密码" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="new">输入新密码</label>
+                <input class="form-control" type="password" id="new" name="new" placeholder="新密码" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="confirm">确认密码</label>
+                <input class="form-control" type="password" id="confirm" placeholder="确认密码" required>
+            </div>
+            <button class="btn btn-primary" type="submit">修改密码</button>
+        </form>
+        <script>
+            document.getElementById('modify-password').addEventListener('submit', (e) => {
+                if (document.getElementById('new').value !== document.getElementById('confirm').value) {
+                    e.preventDefault();
+                    alert('两次密码不一致');
+                }
+            });
+        </script>
     </div>
-    <div class="form-group">
-        <label class="form-label" for="new">输入新密码</label>
-        <input class="form-control" type="password" id="new" name="new" placeholder="新密码" required>
-    </div>
-    <div class="form-group">
-        <label class="form-label" for="confirm">确认密码</label>
-        <input class="form-control" type="password" id="confirm" placeholder="确认密码" required>
-    </div>
-    <button class="btn btn-primary" type="submit">修改密码</button>
-</form>
-<script>
-    document.getElementById('modify-password').addEventListener('submit', (e) => {
-        if (document.getElementById('new').value !== document.getElementById('confirm').value) {
-            e.preventDefault();
-            alert('两次密码不一致');
-        }
-    });
-</script>
-<h2>通知:</h2>
-<div class="accordion" id="notices">
-{% for i, title, content, senderid, sender in notices %}
-<div class="accordion-item">
-    <h2 class="accordion-header" id="heading-{{i}}">
-        <button 
-            class="accordion-button{{'' if i == 0 else ' collapsed'}}" 
-            type="button" 
-            data-bs-toggle="collapse" 
-            data-bs-target="#notice-{{i}}" 
-            aria-expanded="true" 
-            aria-controls="notice-{{i}}"
-        >
-            {{title}}
-        </button>
-    </h2>
-    <div 
-        id="notice-{{i}}" 
-        class="accordion-collapse collapse{{' show' if i == 0 else ''}}" 
-        aria-labelledby="heading-{{i}}" 
-        data-bs-parent="#notices"
-    >
-        <div class="accordion-body">
-            {{content|safe}}
-            <small>来自 <a href="/user/{{senderid}}">{{sender}}</a></small>
+    <div class="tab-pane fade" id="notice-tab-pane" role="tabpanel" aria-labelledby="notice-tab" tabindex="0">
+    <div class="accordion" id="notices">
+    {% for i, title, content, senderid, sender in notices %}
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="heading-{{i}}">
+            <button class="accordion-button{{'' if i == 0 else ' collapsed'}}" type="button" data-bs-toggle="collapse" data-bs-target="#notice-{{i}}" aria-expanded="true" aria-controls="notice-{{i}}">
+                {{title}}
+            </button>
+        </h2>
+        <div id="notice-{{i}}" class="accordion-collapse collapse{{' show' if i == 0 else ''}}" aria-labelledby="heading-{{i}}" data-bs-parent="#notices">
+            <div class="accordion-body">
+                {{content|safe}}
+                <small>来自 <a href="/user/{{senderid}}">{{sender}}</a></small>
+            </div>
         </div>
     </div>
 </div>

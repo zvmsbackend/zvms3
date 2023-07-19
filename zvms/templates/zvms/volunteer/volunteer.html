@@ -31,9 +31,32 @@
         {% endif %}
         {% if holderid == _userid or Permission.MANAGER.authorized(_permission) %}
         <a class="btn btn-primary" href="/volunteer/{{id}}/modify" role="button">修改</a>
-        <form action="/volunteer/{{id}}/delete" method="POST">
+        <!-- <form action="/volunteer/{{id}}/delete" method="POST">
             <button class="btn btn-danger" type="submit">删除</button>
-        </form>
+        </form> -->
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#delete-modal">
+            删除
+        </button>
+        <div class="modal fade" id="delete-modal" tabindex="-1" aria-labelledby="delete-modal-label" aria-hidden="true">
+            <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h1 class="modal-title fs-5" id="delete-modal-label">确认删除</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>真的要删除义工吗?</p>
+                    <p>删除后, 报名和感想也将被移除, 且<em>不可</em>恢复</p>
+                </div>
+                <form action="/volunteer/{{id}}/delete" method="POST">
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                        <button type="submit" class="btn btn-danger">确认</button>
+                    </div>
+                </form>
+            </div>
+            </div>
+        </div>
         {% endif %}
     </div>
     <h4>已参加者:</h4>

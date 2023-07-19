@@ -47,12 +47,13 @@ class VolStatus(IntEnum):
     UNAUDITED = 1
     ACCEPTED = 2
     REJECTED = 3
+    SPECIAL = 4
 
     def __str__(self) -> str:
-        return ('未过审', '可报名', '不可报名')[self - 1]
+        return ('未过审', '可报名', '不可报名', '特殊义工')[self - 1]
     
     def badge(self) -> str:
-        return ('dark', 'success', 'danger')[self - 1]
+        return ('dark', 'success', 'danger', 'primary')[self - 1]
 
 class VolType(IntEnum):
     INSIDE = 1
