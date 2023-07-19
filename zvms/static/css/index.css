@@ -40,7 +40,8 @@ main {
     transform-origin: .5em 50%;
 }
 
-[data-bs-theme="dark"] .btn-toggle::before {
+[data-bs-theme="dark"] .btn-toggle::before
+[data-bs-theme="blue"] .btn-toggle::before {
     content: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='rgba%28255,255,255,.5%29' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 14l6-6-6-6'/%3e%3c/svg%3e");
 }
 
@@ -67,11 +68,27 @@ main {
     overflow-y: auto;
 }
 
+html[data-bs-theme="blue"] div.flex-shrink-0 {
+    background-color: #171a21;
+}
+
+html[data-bs-theme="blue"] div.container {
+    background: url('https://store.st.dl.eccdnx.com/public/images/v6/colored_body_top.png?v=2') center top no-repeat #1b2838;
+}
+
+html[data-bs-theme="blue"] .card {
+    background-image: url('https://store.st.dl.eccdnx.com/public/images/v6/home/background_spotlight.jpg');
+}
+
+html[data-bs-theme="blue"] .copyright::before {
+    content: url('https://help.steampowered.com/public/images/footerLogo_valve_new.png')
+}
+
 [data-bs-theme="blue"] {
     color-scheme: dark;
     --bs-body-color: #0080ff;
     --bs-body-bg: #002a54;
-    --bs-emphasis-color: #2e1293;
+    --bs-emphasis-color: #2d0ba7;
     --bs-emphasis-color-rgb: rgb(13, 0, 255);
     --bs-secondary-color: rgba(112, 172, 232, 0.75);
     --bs-secondary-color-rgb: 173,181,189;
