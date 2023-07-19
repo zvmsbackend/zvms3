@@ -29,7 +29,7 @@
             <button class="btn btn-danger" type="submit">打回义工</button>
         </form>
         {% endif %}
-        {% if holderid == _userid or Permission.MANAGER.authorized(_permission) %}
+        {% if holderid == _userid or Permission.MANAGER.authorized(_permission) and status != 2 %}
         <a class="btn btn-primary" href="/volunteer/{{id}}/modify" role="button">修改</a>
         <!-- <form action="/volunteer/{{id}}/delete" method="POST">
             <button class="btn btn-danger" type="submit">删除</button>

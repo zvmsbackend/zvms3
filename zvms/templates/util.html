@@ -18,11 +18,19 @@
     </div>
 </form>
 {% endmacro %}
-{% macro vol_types() %}
+{% macro vol_types(selected=0) %}
 <select class="form-select" name="type">
+    {% if selected == 0 %}
+    <option>选择义工类型</option>
+    {% else %}
     <option selected>选择义工类型</option>
+    {% endif %}
     {% for value, text in varargs %}
+    {% if selected == value %}
+    <option value="{{value}}" selected>{{text}}</option>
+    {% else %}
     <option value="{{value}}">{{text}}</option>
+    {% endif %}
     {% endfor %}
 </select>
 {% endmacro %}

@@ -230,9 +230,11 @@ def edit_thought(volid: int, userid: int, thought: str, pictures: list[str], fil
     )
     for filename in pictures:
         if execute_sql(
-            'SELECT COUNT(*) FROM picture WHERE volid = :volid AND filename = :picture'
+            'SELECT COUNT(*) FROM picture WHERE volid = :volid AND filename = :filename',
+            volid=volid,
+            filename=filename
         ).fetchone()[0] == 0:
-            return render_template('图片{}不存在'.format(filename))
+            return render_template('zvms/error.html', msg='图片{}不存在'.format(filename))
         execute_sql(
             'INSERT INTO picture(volid, userid, filename) '
             'VALUES(:volid, :userid, :filename)',

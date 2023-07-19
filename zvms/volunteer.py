@@ -1,3 +1,4 @@
+from operator import itemgetter
 from urllib.parse import quote
 from typing import Literal
 from datetime import date
@@ -182,6 +183,28 @@ def volunteer_info(id: int):
 def create_volunteer_get():
     return render_template('zvms/volunteer/create.html')
 
+def volunteer_helper_pre(classes: list[int], classes_max: list[int]) -> None:
+    if len(classes) != len(classes_max):
+        raise ZvmsError('表单校验错误')
+    for classid, max in zip(classes, classes_max):
+        if execute_sql(
+            'SELECT COUNT(userid) '
+            'FROM user '
+            'WHERE classid = :classid',
+            classid=classid
+        ).fetchone()[0] < max:
+            raise ZvmsError('班级{}的人数溢出'.format(classid))
+
+def volunteer_helper_post(id: int, classes: list[int], classes_max: list[int]) -> None:
+    for classid, max in zip(classes, classes_max):
+        execute_sql(
+            'INSERT INTO class_vol(classid, volid, max) '
+            'VALUES(:classid, :volid, :max)',
+            classid=classid,
+            volid=id,
+            max=max
+        )
+
 @route(Volunteer, url.create)
 @login_required
 @permission(Permission.MANAGER)
@@ -194,35 +217,20 @@ def create_volunteer(
     classes: requiredlist[int],
     classes_max: requiredlist[int]
 ):
-    if len(classes) != len(classes_max):
-        return render_template('zvms/error.html', msg='表单校验错误')
-    for classid, max in zip(classes, classes_max):
-        if execute_sql(
-            'SELECT COUNT(userid) '
-            'FROM user '
-            'WHERE classid = :classid',
-            classid=classid
-        ).fetchone()[0] < max:
-            return render_template('zvms/error.html', msg='班级{}的人数溢出'.format(classid))
+    volunteer_helper_pre(classes, classes_max)
     execute_sql(
         'INSERT INTO volunteer(name, description, status, holder, type, reward, time) '
-        'VALUES(:name, :description, :status, :holder, 1, :reward, :time)',
+        'VALUES(:name, :description, :status, :holder, :type, :reward, :time)',
         name=name,
         description=description,
+        type=VolType.INSIDE,
         status=VolStatus.ACCEPTED if (Permission.CLASS | Permission.MANAGER).authorized() else VolStatus.UNAUDITED,
         holder=session.get('userid'),
         reward=reward,
         time=time
     )
     volid = get_primary_key()[0]
-    for classid, max in zip(classes, classes_max):
-        execute_sql(
-            'INSERT INTO class_vol(classid, volid, max) '
-            'VALUES(:classid, :volid, :max)',
-            classid=classid,
-            volid=volid,
-            max=max
-        )
+    volunteer_helper_post(volid, classes, classes_max)
     return redirect('/volunteer/{}'.format(volid))
 
 @Volunteer.route('/create/appointed')
@@ -243,8 +251,10 @@ def create_appointed_volunteer(
 ):
     userids = username2userid(joiners)
     status = VolStatus.UNAUDITED
+    thought_status = ThoughtStatus.WAITING_FOR_SIGNUP_AUDIT
     if (Permission.CLASS | Permission.MANAGER).authorized(session.get('permission')):
         status = VolStatus.ACCEPTED
+        thought_status = ThoughtStatus.DRAFT
     execute_sql(
         'INSERT INTO volunteer(name, description, status, holder, time, type, reward) '
         'VALUES(:name, :description, :status, :holder, DATE(\'now\'), :type, :reward)',
@@ -256,16 +266,13 @@ def create_appointed_volunteer(
         reward=reward
     )
     volid = get_primary_key()[0]
-    status = ThoughtStatus.WAITING_FOR_SIGNUP_AUDIT
-    if (Permission.CLASS | Permission.MANAGER).authorized():
-        status = ThoughtStatus.DRAFT
     for userid in userids:
         execute_sql(
             'INSERT INTO user_vol(userid, volid, status, thought, reward) '
             'VALUES(:userid, :volid, :status, \'\', 0)',
             userid=userid,
             volid=volid,
-            status=status
+            status=thought_status
         )
     return redirect('/volunteer/{}'.format(volid))
 
@@ -279,6 +286,12 @@ def audit_volunteer(id: int, status: Literal[VolStatus.ACCEPTED, VolStatus.REJEC
         id=id,
         status=status
     )
+    if status == VolStatus.ACCEPTED:
+        execute_sql(
+            'UPDATE user_vol SET status = :status WHERE volid = :volid',
+            volid=id,
+            status=ThoughtStatus.DRAFT
+        )
     return redirect('/volunteer/{}'.format(id))
 
 @Volunteer.route('/create/special')
@@ -287,6 +300,27 @@ def audit_volunteer(id: int, status: Literal[VolStatus.ACCEPTED, VolStatus.REJEC
 @view
 def create_special_volunteer_get():
     return render_template('zvms/volunteer/create_special.html')
+
+def special_volunteer_helper_pre(rewards: list[str], joiners: list[str]) -> None:
+    if len(rewards) != len(joiners):
+        raise ZvmsError('表单校验错误')
+    if all(map(str.isnumeric, rewards)):
+        rewards[:] = list(map(int, rewards))
+    elif (reward := next(filter(str.isnumeric, rewards), None)) is not None:
+        rewards[:] = [int(reward)] * len(rewards)
+    else:
+        raise ZvmsError('表单校验错误')
+    
+def special_volunteer_helper_post(id: int, rewards: list[int], userids: list[int]) -> None:
+    for userid, reward in zip(userids, rewards):
+        execute_sql(
+            'INSERT INTO user_vol(userid, volid, status, thought, reward) '
+            'VALUES(:userid, :volid, :status, \'\', :reward)',
+            userid=userid,
+            volid=id,
+            status=ThoughtStatus.ACCEPTED,
+            reward=reward
+        )
 
 @route(Volunteer, url.create.special)
 @login_required
@@ -297,14 +331,7 @@ def create_special_volunteer(
     rewards: requiredlist[str],
     joiners: requiredlist[str]
 ):
-    if len(rewards) != len(joiners):
-        return render_template('zvms/error.html', msg='表单校验错误')
-    if all(map(str.isnumeric, rewards)):
-        rewards = list(map(int, rewards))
-    elif (reward := next(filter(str.isnumeric, rewards), None)) is not None:
-        rewards = [int(reward)] * len(rewards)
-    else:
-        return render_template('zvms/error.html', msg='表单校验错误')
+    special_volunteer_helper_pre(rewards, joiners)
     userids = username2userid(joiners)
     execute_sql(
         'INSERT INTO volunteer(name, description, status, holder, time, type, reward) '
@@ -316,15 +343,7 @@ def create_special_volunteer(
         reward=0
     )
     volid = get_primary_key()[0]
-    for userid, reward in zip(userids, rewards):
-        execute_sql(
-            'INSERT INTO user_vol(userid, volid, status, thought, reward) '
-            'VALUES(:userid, :volid, :status, \'\', :reward)',
-            userid=userid,
-            volid=volid,
-            status=ThoughtStatus.ACCEPTED,
-            reward=reward
-        )
+    special_volunteer_helper_post(volid, rewards, userids)
     return redirect('/volunteer/{}'.format(volid))
 
 @Volunteer.route('/<int:id>/signup', methods=['POST'])
@@ -404,6 +423,10 @@ def delete_volunteer(id: int):
         volid=id
     )
     execute_sql(
+        'DELETE FROM picrture WHERE volid = :volid',
+        volid=id
+    )
+    execute_sql(
         'DELETE FROM volunteer WHERE id = :id',
         id=id
     )
@@ -412,88 +435,183 @@ def delete_volunteer(id: int):
 @Volunteer.route('/<int:id>/modify')
 @login_required
 @view
-def modify_volunteer(id: int):
-    return render_template('zvms/volunteer/modify.html')
+def modify_volunteer_get(id: int):
+    match execute_sql(
+        'SELECT holder, name, description, reward, time, status, type '
+        'FROM volunteer WHERE id = :id',
+        id=id
+    ).fetchone():
+        case None:
+            abort(404)
+        case [holder, name, description, reward, time, status, type]:
+            if status == VolStatus.REJECTED:
+                return render_template('zvms/error.html', msg='不能修改被拒绝的义工')
+            if holder != int(session.get('userid')) and not Permission.MANAGER.authorized():
+                return render_template('zvms/error.html', msg='不可修改他人的义工')
+    joiners = execute_sql(
+        'SELECT userid, reward '
+        'FROM user_vol '
+        'WHERE volid = :volid',
+        volid=id
+    ).fetchall()
+    if status == VolStatus.SPECIAL:
+        if len(set(map(itemgetter(1), joiners))) == 1:
+            joiners = [
+                (userid, reward if i == 0 else '')
+                for i, (userid, reward) in enumerate(joiners)
+            ]
+        return render_template(
+            'zvms/volunteer/create_special.html',
+            action='/volunteer/{}/modify/special'.format(id),
+            name=name,
+            type=type,
+            joiners=joiners
+        )
+    classes = execute_sql(
+        'SELECT classid, max '
+        'FROM class_vol '
+        'WHERE volid = :volid',
+        volid=id
+    ).fetchall()
+    if classes:
+        return render_template(
+            'zvms/volunteer/create.html',
+            action='/volunteer/{}/modify'.format(id),
+            name=name,
+            description=description,
+            time=time,
+            reward=reward,
+            classes=classes
+        )
+    return render_template(
+        'zvms/volunteer/create_appointed.html',
+        action='/volunteer/{}/modify/appointed'.format(id),
+        name=name,
+        description=description,
+        type=type,
+        reward=reward,
+        joiners=list(map(itemgetter(0), joiners))
+    )
 
-# 义工修改功能需要判断义工类型是校内, 指定还是特殊
-# 也就是说, 需要2 * 3 = 6种逻辑(GET + POST)
-# 反正我是懒得写了
+def test_self(id: int) -> None:
+    match execute_sql(
+        'SELECT status, holder FROM volunteer WHERE id = :id',
+        id=id
+    ).fetchone():
+        case None:
+            abort(404)
+        case [_, holder] if holder != int(session.get('userid')) and not Permission.MANAGER.authorized():
+            raise ZvmsError('不能修改他人的义工')
+        case [status, _]:
+            if status == VolStatus.REJECTED:
+                raise ZvmsError('不能修改被拒绝的义工')
+            return status
+    
+@route(Volunteer, url['id'].modify.special)
+@login_required
+@permission(Permission.MANAGER)
+@view
+def modify_volunteer_special(
+    id: int,
+    name: lengthedstr[32],
+    type: VolType,
+    rewards: requiredlist[str],
+    joiners: requiredlist[str]
+):
+    test_self(id)
+    special_volunteer_helper_pre(rewards, joiners)
+    userids = username2userid(joiners)
+    execute_sql(
+        'UPDATE volunteer '
+        'SET name = :name, description = :name, type = :type '
+        'WHERE id = :id',
+        id=id,
+        name=name,
+        type=type
+    )
+    execute_sql(
+        'DELETE FROM user_vol '
+        'WHERE volid = :volid',
+        volid=id
+    )
+    special_volunteer_helper_post(id, rewards, userids)
+    return redirect('/volunteer/{}'.format(id))
 
-# @Volunteer.route('/volunteer/<int:id>/modify')
-# @login_required
-# @view
-# def modify_volunteer(id: int):
-#     match execute_sql(
-#         'SELECT holder, name, description, reward, time '
-#         'FROM volunteer WHERE id = :id',
-#         id=id
-#     ).fetchone():
-#         case None:
-#             abort(404)
-#         case [holder, name, description, reward, time]:
-#             if holder != int(session.get('userid')) and not Permission.MANAGER.authorized():
-#                 return render_template('zvms/error.html', msg='不可修改他人的义工')
+@route(Volunteer, url['id'].modify)
+@login_required
+@permission(Permission.MANAGER)
+@view
+def modify_volunteer(
+    id: int,
+    name: lengthedstr[32],
+    description: str,
+    time: date,
+    reward: int,
+    classes: requiredlist[int],
+    classes_max: requiredlist[int]
+):
+    test_self(id)
+    volunteer_helper_pre(classes, classes_max)
+    execute_sql(
+        'UPDATE volunteer '
+        'SET name = :name, description = :description, reward = :reward, time = :time '
+        'WHERE id = :id',
+        id=id,
+        name=name,
+        description=description,
+        reward=reward,
+        time=time
+    )
+    execute_sql(
+        'DELETE FROM class_vol '
+        'WHERE volid = :volid',
+        volid=id
+    )
+    volunteer_helper_post(id, classes, classes_max)
+    return redirect('/volunteer/{}'.format(id))
 
-# @route(Volunteer, url['id'].modify)
-# @login_required
-# @view
-# def modify_volunteer(
-#     id: int, 
-#     name: lengthedstr[32],
-#     description: str,
-#     reward: int,
-#     time: date,
-#     classes: list[int],
-#     classes_max: list[int]
-# ):
-#     match execute_sql(
-#         'SELECT holder, type FROM volunteer WHERE id = :id',
-#         id=id
-#     ).fetchone():
-#         case None:
-#             abort(404)
-#         case [holder, type]:
-#             if holder != int(session.get('userid')) and not Permission.MANAGER.authorized():
-#                 return render_template('zvms/error.html', msg='不能修改他人的义工')
-#             if type != VolType.INSIDE and (classes or classes_max):
-#                 return render_template('zvms/error.html', mag='该义工不可招募'.format(id))
-#     if len(classes) != len(classes_max):
-#         return render_template('zvms/error.html', msg='表单校验错误')
-#     classes_dict = dict(zip(classes, classes_max))
-#     for classid, count in execute_sql(
-#         'SELECT cv.classid, COUNT(uv.userid) '
-#         'FROM user_vol AS uv '
-#         'JOIN class_vol AS cv ON cv.volid = uv.volid '
-#         'WHERE uv.volid = :volid '
-#         'GROUP BY cv.classid',
-#         volid=id
-#     ).fetchall():
-#         if classid in classes_dict:
-#             if count < classes_dict[classid]:
-#                 return render_template('zvms/error.html', msg='班级{}的人数超过上限'.format(classid))
-#             execute_sql(
-#                 'UPDATE class_vol SET max = :max WHERE classid = :classid AND volid = :volid',
-#                 max=classes_dict[classid],
-#                 classid=classid,
-#                 volid=id
-#             )
-#             del classes_dict[classid]
-#     for classid, max in classes_dict.items():
-#         execute_sql(
-#             'INSERT INTO class_vol(:classid, :volid, :max) '
-#             'VALUES(:classid, :volid, :max)',
-#             classid=classid,
-#             volid=id,
-#             max=max
-#         )
-#     execute_sql(
-#         'UPDATE volunteer '
-#         'SET name = :name, description = :description, reward = :reward, time = :time '
-#         'WHERE id = :id',
-#         id=id,
-#         name=name,
-#         description=description,
-#         reward=reward,
-#         time=time
-#     )
-#     return redirect('/volunteer/{}'.format(id))
+@route(Volunteer, url['id'].modify.appointed)
+@login_required
+@view
+def modify_volunteer_appointed(
+    id: int,
+    name: lengthedstr[32],
+    description: str,
+    type: Literal[VolType.INSIDE, VolType.OUTSIDE],
+    reward: int,
+    joiners: list[str]
+):
+    status = test_self(id)
+    userids = set(username2userid(joiners))
+    execute_sql(
+        'UPDATE volunteer '
+        'SET name = :name, description = :description, type = :type, reward = :reward '
+        'WHERE id = :id',
+        id=id,
+        name=name,
+        description=description,
+        type=type,
+        reward=reward
+    )
+    former_joiners = set(execute_sql(
+        'SELECT userid '
+        'FROM user_vol '
+        'WHERE volid = :volid',
+        volid=id
+    ).scalars().all())
+    for deprecated in former_joiners - userids:
+        execute_sql(
+            'DELETE FROM user_vol '
+            'WHERE volid = :volid AND userid = :userid',
+            volid=id,
+            userid=deprecated
+        )
+    for added in userids - former_joiners:
+        execute_sql(
+            'INSERT INTO user_vol(userid, volid, status, thought, reward) '
+            'VALUES(:userid, :volid, :status, \'\', 0)',
+            userid=added,
+            volid=id,
+            status=ThoughtStatus.WAITING_FOR_SIGNUP_AUDIT if status == VolStatus.UNAUDITED else ThoughtStatus.DRAFT
+        )
+    return redirect('/volunteer/{}'.format(id))

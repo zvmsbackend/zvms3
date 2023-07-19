@@ -56,20 +56,20 @@ cur_new.executemany(
 )
 
 cur_old.execute(
-    'SELECT stu_id, vol_id, status, thought, reward FROM stu_vol'
+    'SELECT status, reward, stu_id, vol_id, thought FROM stu_vol'
 )
 thoughts = [
-    (stuid, volid, {
+    ({
         1: 1,
         2: 2,
         4: 3,
         5: 4,
         6: 5
-    }[status], *spam)
-    for stuid, volid, status, *spam in cur_old.fetchall()
+    }[status], 0 if reward < 0 else reward, *spam)
+    for status, reward, *spam in cur_old.fetchall()
 ]
 cur_new.executemany(
-    'INSERT INTO user_vol(userid, volid, status, thought, reward) '
+    'INSERT INTO user_vol(status, reward, userid, volid, thought) '
     'VALUES(?, ?, ?, ?, ?)',
     thoughts
 )
@@ -93,7 +93,7 @@ for *_, hash, extension in pictures:
 cur_new.executemany(
     'INSERT INTO picture(userid, volid, filename) '
     'VALUES(?, ?, ?)',
-    ((*spam, hash + extension)
+    ((*spam, '{}.{}'.format(hash, extension))
      for *spam, hash, extension in pictures)
 )
 

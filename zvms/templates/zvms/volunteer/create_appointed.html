@@ -2,23 +2,23 @@
 {% from "util.html" import vol_types, submit_or_reset %}
 {% block container %}
 <p>指定义工是任何人都可以创建的义工, 但只有管理员能创建校内形式的. 创建时必须指定所有参加者. </p>
-<form method="POST">
+<form action="{{action}}" method="POST">
     <div class="row">
         <div class="col-12">
             <label class="form-label" for="name">输入义工名称</label>
-            <input class="form-control" type="text" id="name" name="name" placeholder="义工名称" maxlength="32" required>
+            <input class="form-control" type="text" id="name" name="name" placeholder="义工名称" maxlength="32" value="{{name}}" required>
         </div>
         <div class="col-12">
             <label class="form-label" for="description">输入义工描述</label>
-            <textarea class="form-control" id="description" name="description" rows="5" required></textarea>
+            <textarea class="form-control" id="description" name="description" rows="5" required>{{description}}</textarea>
         </div>
         <div class="col-{{'6' if Permission.MANAGER.authorized(_permission) else '12'}}">
             <label class="form-label" for="reward">输入预期获得的义工时间</label>
-            <input class="form-control" type="number" id="reward" name="reward" placeholder="义工时间" required>
+            <input class="form-control" type="number" id="reward" name="reward" placeholder="义工时间" value="{{reward}}" required>
         </div>
         {% if Permission.MANAGER.authorized(_permission) %}
         <div class="col-6">
-            {{vol_types((1, '校内义工'), (2, '校外义工'))}}
+            {{vol_types(type if type else 0, (1, '校内义工'), (2, '校外义工'))}}
         </div>
         {% else %}
         <input type="hidden" name="type" value="2">
@@ -26,20 +26,33 @@
         <div class="col-12" id="joiners">
             <div class="row">
                 <div class="col-8">
-                    <input class="form-control" type="text" name="joiners" placeholder="用户ID或姓名" required>
+                    <input class="form-control" type="text" name="joiners" placeholder="用户ID或姓名" value="{{joiners[0] if joiners else ''}}" required>
                 </div>
                 <div class="col">
                     <button class="btn btn-primary" type="button" id="add-joiner">添加</button>
                 </div>
             </div>
+            {% if joiners %}
+            {% for userid in joiners[1:] %}
+            <div class="row" id="joiner-{{userid}}">
+                <div class="col-8">
+                    <input class="form-control" type="text" name="joiners" placeholder="用户ID或姓名" value="{{userid}}" required>
+                </div>
+                <div class="col">
+                    <button class="btn btn-danger" type="button" onclick="document.getElementById('joiner-{{userid}}').remove()">删除</button>
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
         </div>
         {{submit_or_reset()}}
     </div>
 </form>
 <script>
     const joiners = document.getElementById('joiners');
-    let joinersCount = 1;
+    let joinersCount = joiners.childElementCount;
     document.getElementById('add-joiner').addEventListener('click', (e) => {
+        joinersCount++;
         joiners.append(util.createElement(
             'div',
             {

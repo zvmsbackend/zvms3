@@ -50,7 +50,7 @@ class VolStatus(IntEnum):
     SPECIAL = 4
 
     def __str__(self) -> str:
-        return ('未过审', '可报名', '不可报名', '特殊义工')[self - 1]
+        return ('未过审', '已通过', '不可报名', '特殊义工')[self - 1]
     
     def badge(self) -> str:
         return ('dark', 'success', 'danger', 'primary')[self - 1]
