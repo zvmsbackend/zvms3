@@ -1,38 +1,40 @@
 {% extends "zvms/base.html" %}
+{% from "util.html" import submit_or_reset %}
 {% block container %}
 <p>校内义工是管理员创建的义工, 以招募的形式发布, 需要指定每个班可报名的最大人数</p>
 <form method="POST">
-    <div class="form-group">
-        <label class="form-label" for="name">输入义工名称</label>
-        <input class="form-control" type="text" id="name" name="name" placeholder="义工名称" maxlength="32" required>
-    </div>
-    <div class="form-group">
-        <label class="form-label" for="description">输入义工描述</label>
-        <textarea class="form-control" id="description" name="description"></textarea>
-    </div>
-    <div class="form-group">
-        <label class="form-label" for="time">输入义工报名截止时间</label>
-        <input class="form-control" type="date" id="time" name="time" required>
-    </div>
-    <div class="form-group">
-        <label class="form-label" for="reward">输入预期获得的义工时间</label>
-        <input class="form-control" type="number" id="reward" placeholder="义工时间" name="reward" required>
-    </div>
-    <div class="form-group" id="classes">
-        <div class="row">
-            <div class="col-5">
-                <input class="form-control" type="number" name="classes" placeholder="班级ID" required>
-            </div>
-            <div class="col-5">
-                <input class="form-control" type="number" name="classes_max" placeholder="允许报名的最大人数" required>
-            </div>
-            <div class="col">
-                <button class="btn btn-primary" type="button" id="add-class">添加</button>
+    <div class="row">
+        <div class="col-12">
+            <label class="form-label" for="name">输入义工名称</label>
+            <input class="form-control" type="text" id="name" name="name" placeholder="义工名称" maxlength="32" required>
+        </div>
+        <div class="col-12">
+            <label class="form-label" for="description">输入义工描述</label>
+            <textarea class="form-control" id="description" name="description" rows="5" required></textarea>
+        </div>
+        <div class="col-6">
+            <label class="form-label" for="time">输入义工报名截止时间</label>
+            <input class="form-control" type="date" id="time" name="time" required>
+        </div>
+        <div class="col-6">
+            <label class="form-label" for="reward">输入预期获得的义工时间</label>
+            <input class="form-control" type="number" id="reward" placeholder="义工时间" name="reward" required>
+        </div>
+        <div class="col-12" id="classes">
+            <div class="row">
+                <div class="col-5">
+                    <input class="form-control" type="number" name="classes" placeholder="班级ID" required>
+                </div>
+                <div class="col-5">
+                    <input class="form-control" type="number" name="classes_max" placeholder="允许报名的最大人数" required>
+                </div>
+                <div class="col">
+                    <button class="btn btn-primary" type="button" id="add-class">添加</button>
+                </div>
             </div>
         </div>
+        {{submit_or_reset()}}
     </div>
-    <button class="btn btn-primary" type="submit">提交</button>
-    <input class="btn btn-primary" type="reset" value="重置">
 </form>
 <script>
     const classes = document.getElementById('classes');

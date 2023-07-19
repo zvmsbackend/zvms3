@@ -4,9 +4,11 @@
 {% for userid, username, volid, volname, status, badge in data %}
 <div class="card">
     <div class="card-body">
-        <h5 class="card-title"><a href="/volunteer/{{volid}}">{{volname}}</a></h5>
-        <h6 class="card-subtitle mb-2 text-muted"><a href="/user/{{userid}}">{{username}}</a></h6>
-        <a href="/thought/{{volid}}/{{userid}}">查看</a>
+        <a class="h4" href="/thought/{{volid}}/{{userid}}">查看</a>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item"><a href="/volunteer/{{volid}}">{{volname}}</a></li>
+            <li class="list-group-item"><a href="/user/{{userid}}">{{username}}</a></li>
+        </ul>
         <div class="card-footer">
             <span class="badge bg-{{badge}}">{{status}}</span>
         </div>

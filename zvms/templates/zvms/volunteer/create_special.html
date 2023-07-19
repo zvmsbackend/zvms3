@@ -1,30 +1,32 @@
 {% extends "zvms/base.html" %}
-{% from "util.html" import vol_types %}
+{% from "util.html" import vol_types, submit_or_reset %}
 {% block container %}
 <p>特殊义工是管理员创建的义工, 用于竞赛获奖, 大型实践等场合. 它的参与者无需填写感想</p>
 <form method="POST">
-    <div class="form-group">
-        <label class="form-label" for="name">输入义工名称</label>
-        <input class="form-control" type="text" id="name" name="name" placeholder="义工名称" maxlength="32" required>
-    </div>
-    <p>选择义工类型</p>
-    {{vol_types((1, '校内义工'), (2, '校外义工'), (3, '大型实践'))}}
-    <div class="form-group" id="joiners">
-        <div class="row">
-            <div class="col-5">
-                <input class="form-control" type="text" name="joiners" placeholder="用户ID或姓名" required>
-            </div>
-            <div class="col-5">
-                <input class="form-control" type="number" name="rewards" placeholder="获得的义工时间" required>
-            </div>
-            <div class="col">
-                <button class="btn btn-primary" type="button" id="add-joiner">添加</button>
+    <div class="row">
+        <div class="col-6">
+            <label class="form-label" for="name">输入义工名称</label>
+            <input class="form-control" type="text" id="name" name="name" placeholder="义工名称" maxlength="32" required>
+        </div>
+        <div class="col-6">
+            {{vol_types((1, '校内义工'), (2, '校外义工'), (3, '大型实践'))}}
+        </div>
+        <div class="col-12" id="joiners">
+            <div class="row">
+                <div class="col-5">
+                    <input class="form-control" type="text" name="joiners" placeholder="用户ID或姓名" required>
+                </div>
+                <div class="col-5">
+                    <input class="form-control" type="number" name="rewards" placeholder="获得的义工时间" required>
+                </div>
+                <div class="col">
+                    <button class="btn btn-primary" type="button" id="add-joiner">添加</button>
+                </div>
             </div>
         </div>
+        <p>如果只填写了一个义工时间, 那么所有参与者都将获得相同的义工时间</p>
+        {{submit_or_reset()}}
     </div>
-    <p>如果只填写了一个义工时间, 那么所有参与者都将获得相同的义工时间</p>
-    <button class="btn btn-primary" type="submit">提交</button>
-    <input class="btn btn-primary" type="reset" value="重置">
 </form>
 <script>
     const joiners = document.getElementById('joiners');

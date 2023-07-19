@@ -1,65 +1,70 @@
 {% extends "zvms/base.html" %}
 {% block container %}
-<h2><a href="/volunteer/{{volid}}">{{volname}}</a></h2>
-<h3><a href="/user/class/{{classid}}">{{classname}}</a>&nbsp;<a href="/user/{{userid}}">{{username}}</a></h3>
-<span class="badge bg-primary-subtle text-primary-emphasis rounded-pill bg-primary">{{type}}</span>
-<span class="badge bg-{{status.badge()}}">{{status}}</span>
-<div class="card">
-    <div class="card-body">
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/volunteer/{{volid}}">{{volname}}</a></li>
+        <li class="breadcrumb-item"><a href="/user/class/{{classid}}">{{classname}}</a></li>
+        <li class="breadcrumb-item active" aria-current="page"><a href="/user/{{userid}}">{{username}}</a></li>
+    </ol>
+</nav>
+<div class="px-4 py-5 my-5 text-center">
+    <h1 class="display-5 fw-bold text-body-emphasis">
+        <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill bg-primary">{{type}}</span>
+        <span class="badge bg-{{status.badge()}}">{{status}}</span>
+    </h1>
+    <div class="col-lg-6 mx-auto">
         {{thought|safe}}
-    </div>
-</div>
-{% if pictures %}
-<div id="pictures" class="carousel slide" data-bs-ride="carousel">
-    <div class="carousel-indicators">
-        {% for i, _ in pictures %}
-        <button type="button" data-bs-target="#pictures" data-bs-slide-to="{{i}}" class="{{'active' if i == 0 else ''}}" />
-        {% endfor %}
-    </div>
-    <div class="carousel-inner">
-    {% for i, img in pictures %}
-    <div class="carousel-item{{' active' if i == 0 else ''}}">
-        <img src="/static/pictures/{{img}}" class="img-fluid">
-    </div>
-    {% endfor %}
-    </div>
-    <button class="carousel-control-prev" type="button" data-bs-target="#pictures" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon"></span>
-    </button>
-    <button class="carousel-control-next" type="button" data-bs-target="#pictures" data-bs-slide="next">
-        <span class="carousel-control-next-icon"></span>
-    </button>
-</div>
-{% else %}
-<p>没有图片</p>
-{% endif %}
-{% if reward %}
-<p>获得了{{reward}}分钟义工时间</p>
-{% endif %}
-{% if _userid == userid and status in [2, 3, 4] %}
-<a href="/thought/{{volid}}/{{userid}}/edit">编辑感想</a>
-{% endif %}
-{% if Permission.CLASS.authorized(_permission) and status == 3 %}
-<form action="/thought/{{volid}}/{{userid}}/audit/first" method="POST">
-    <button class="btn btn-primary" type="submit">初审通过感想</button>
-</form>
-{% endif %}
-{% if (Permission.AUDITOR.authorized(_permission) and type == 2 or Permission.MANAGER.authorized() and type == 1) and status == 4 %}
-<form action="/thought/{{volid}}/{{userid}}/audit/final/accept" method="POST">
-    <div class="row">
-        <div class="col-8">
-            <input class="form-control" type="number" name="reward" placeholder="获得的义工时间" value="{{expected_reward}}">
+        {% if pictures %}
+        <div id="pictures" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-indicators">
+                {% for i, _ in pictures %}
+                <button type="button" data-bs-target="#pictures" data-bs-slide-to="{{i}}" class="{{'active' if i == 0 else ''}}" />
+                {% endfor %}
+            </div>
+            <div class="carousel-inner">
+            {% for i, img in pictures %}
+            <div class="carousel-item{{' active' if i == 0 else ''}}">
+                <img src="/static/pictures/{{img}}" class="img-fluid">
+            </div>
+            {% endfor %}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#pictures" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#pictures" data-bs-slide="next">
+                <span class="carousel-control-next-icon"></span>
+            </button>
         </div>
-        <div class="col">
+        {% else %}
+        <p>没有图片</p>
+        {% endif %}
+        {% if reward %}
+        <p>获得了{{reward}}分钟义工时间</p>
+        {% endif %}
+        {% if _userid == userid and status in [2, 3, 4] %}
+        <a href="/thought/{{volid}}/{{userid}}/edit">编辑感想</a>
+        {% endif %}
+    </div>
+    {% if Permission.CLASS.authorized(_permission) and status == 3 %}
+    <form action="/thought/{{volid}}/{{userid}}/audit/first" method="POST">
+        <button class="btn btn-primary" type="submit">初审通过感想</button>
+    </form>
+    {% endif %}
+    {% if (Permission.AUDITOR.authorized(_permission) and type == 2 or Permission.MANAGER.authorized() and type == 1) and status == 4 %}
+    <form action="/thought/{{volid}}/{{userid}}/audit/final/accept" method="POST">
+        <div class="input-group">
+            <input class="form-control" type="number" name="reward" placeholder="获得的义工时间" value="{{expected_reward}}">
             <button class="btn btn-primary" type="submit">终审通过感想</button>
         </div>
+    </form>
+    <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+        <form action="/thought/{{volid}}/{{userid}}/audit/final/pitchback" method="POST">
+            <button class="btn btn-warning" type="submit">打回感想</button>
+        </form>
+        <form action="/thought/{{volid}}/{{userid}}/audit/final/reject" method="POST">
+            <button class="btn btn-danger" type="submit">拒绝感想</button>
+        </form>
     </div>
-</form>
-<form action="/thought/{{volid}}/{{userid}}/audit/final/pitchback" method="POST">
-    <button class="btn btn-warning" type="submit">打回感想</button>
-</form>
-<form action="/thought/{{volid}}/{{userid}}/audit/final/reject" method="POST">
-    <button class="btn btn-danger" type="submit">拒绝感想</button>
-</form>
-{% endif %}
+    {% endif %}
+</div>
 {% endblock %}

@@ -1,50 +1,63 @@
 {% extends "zvms/base.html" %}
-
 {% block container %}
 {% if notices %}
-{% for id, title, content, senderid, sender, targets in notices %}
-<form method="POST">
-    <input type="hidden" name="noticeid" value="{{id}}">
-    {% if targets %}
-    <div class="row">
-        <div class="col-8">
-            通知发送给了:
-        </div>
-        <div class="col">
-            <button class="btn btn-primary targets-adder" type="button" notice-id="{{id}}">添加</button>
+<div class="row">
+    <div id="list-nav" class="col-3">
+        <div class="list-group list-group-flush">
+            {% for id, title, _, _, _, _ in notices %}
+            <a class="list-group-item list-group-item-action" href="#notice-{{id}}">{{title}}</a>
+            {% endfor %}
         </div>
     </div>
-    <div class="form-group targets-{{id}}">
-    {% for i, (userid, username) in targets %}
-    {% if i == 0 %}
-    {{username}}
-    <input class="form-control" type="text" name="targets" value="{{userid}}" required>
-    {% else %}
-    <div class="row" id="target-{{i}}">
-        {{username}}
-        <div class="col-8">
-            <input class="form-control" type="text" name="targets" value="{{userid}}" required>
-        </div>
-        <div class="col">
-            <button class="btn btn-danger" type="button" onclick="document.getElementById('target-{{i}}').remove()">删除</button>
+    <div class="col">
+        <div data-bs-spy="scroll" data-bs-target="#list-nav" data-bs-smooth-scroll="true" style="height: 100vh; overflow: auto" tabindex="0">
+            {% for id, title, content, senderid, sender, targets in notices %}
+            <form method="POST" id="notice-{{id}}">
+                <input type="hidden" name="noticeid" value="{{id}}">
+                {% if targets %}
+                <div class="row">
+                    <div class="col-8">
+                        通知发送给了:
+                    </div>
+                    <div class="col">
+                        <button class="btn btn-primary targets-adder" type="button" notice-id="{{id}}">添加</button>
+                    </div>
+                </div>
+                <div class="form-group targets-{{id}}">
+                {% for i, (userid, username) in targets %}
+                {% if i == 0 %}
+                {{username}}
+                <input class="form-control" type="text" name="targets" value="{{userid}}" required>
+                {% else %}
+                <div class="row" id="target-{{i}}">
+                    {{username}}
+                    <div class="col-8">
+                        <input class="form-control" type="text" name="targets" value="{{userid}}" required>
+                    </div>
+                    <div class="col">
+                        <button class="btn btn-danger" type="button" onclick="document.getElementById('target-{{i}}').remove()">删除</button>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+                </div>
+                <br>
+                {% endif %}
+                <input class="form-control" type="text" id="title" name="title" value="{{title}}" maxlength="32" required>
+                <textarea class="form-control" name="content" rows="10" required>{{content}}</textarea>
+                <p><small>来自 <a href="/user/{{senderid}}">{{sender}}</a></small></p>
+                <button class="btn btn-primary" type="submit">修改</button>
+            </form>
+            <form action="/management/delete-notice" method="POST">
+                <input type="hidden" name="noticeid" value="{{id}}">
+                <button class="btn btn-danger" type="submit">删除</button>
+            </form>
+            <hr>
+            {% endfor %}
         </div>
     </div>
-    {% endif %}
-    {% endfor %}
-    </div>
-    <br>
-    {% endif %}
-    <input class="form-control" type="text" id="title" name="title" value="{{title}}" maxlength="32" required>
-    <textarea class="form-control" name="content" rows="10">{{content}}</textarea>
-    <p><small>来自 <a href="/user/{{senderid}}">{{sender}}</a></small></p>
-    <button class="btn btn-primary" type="submit">修改</button>
-</form>
-<form action="/management/delete-notice" method="POST">
-    <input type="hidden" name="noticeid" value="{{id}}">
-    <button class="btn btn-danger" type="submit">删除</button>
-</form>
-<hr>
-{% endfor %}
+</div>
+
 <script>
     let targetsCount = {{targets|length}};
 </script>

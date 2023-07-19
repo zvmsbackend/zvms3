@@ -159,7 +159,7 @@ def volunteer_info(id: int):
             'JOIN user ON user.userid = uv.userid '
             'WHERE uv.volid = :volid AND uv.status = 1 ',
             volid=id
-        )
+        ).fetchall()
     return render_template(
         'zvms/volunteer/volunteer.html',
         id=id,

@@ -6,8 +6,8 @@
 <table class="table">
     <thead>
         <tr>
-            <td>义工类型</td>
-            <td>义工时间</td>
+            <th>义工类型</th>
+            <th>义工时间</th>
         </tr>
     </thead>
     <tbody>
@@ -46,7 +46,7 @@
 </script>
 <h2>通知:</h2>
 <div class="accordion" id="notices">
-{% for i, (title, content, senderid, sender) in notices %}
+{% for i, title, content, senderid, sender in notices %}
 <div class="accordion-item">
     <h2 class="accordion-header" id="heading-{{i}}">
         <button 

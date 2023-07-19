@@ -1,93 +1,133 @@
 {% extends "zvms/base.html" %}
+{% from "util.html" import submit_or_reset %}
 {% block container %}
-<a href="/thought/csv">获取义工数据CSV</a>
-<hr>
-<a href="/management/edit-notices">编辑通知</a>
-<h2>发送通知</h2>
-<form action="/management/send-notice" method="POST" id="form">
-    <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="anonymous" name="anonymous" value="on">
-        <label class="form-check-label" for="anonymous">匿名(匿名通知发出后无法修改或删除)</label>
+<ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#csv-tab-pane" type="button" role="tab" aria-controls="csv-tab-pane" aria-selected="true">获取义工数据csv</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#notice-tab-pane" type="button" role="tab" aria-controls="notice-tab-pane" aria-selected="false">通知管理</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#password-tab-pane" type="button" role="tab" aria-controls="password-tab-pane" aria-selected="false">修改密码</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#issue-tab-pane" type="button" role="tab" aria-controls="disabled-tab-pane" aria-selected="false">查看反馈</button>
+    </li>
+</ul>
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="csv-tab-pane" role="tabpanel" aria-labelledby="csv-tab" tabindex="0">
+        <a href="/thought/csv">获取义工数据CSV</a>
     </div>
-    <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="school" name="school" value="on">
-        <label class="form-check-label" for="school">学校通知</label>
-    </div>
-    <div class="row">
-        <div class="col-8">
-            <label class="form-label">输入目标的姓名或学号</label>
-        </div>
-        <div class="col">
-            <button class="btn btn-primary" type="button" id="add-target">添加</button>
-        </div>
-    </div>
-    <div class="form-group" id="targets">
-        <input class="form-control" type="text" name="targets" required>
-    </div>
-    <div class="form-group">
-        <label class="form-label" for="title">输入通知标题</label>
-        <input class="form-control" type="text" name="title" id="title" maxlength="32" required>
-    </div>
-    <label class="form-label" for="content">输入通知内容</label>
-    <textarea class="form-control" name="content" rows="10"></textarea>
-    <button class="btn btn-primary" type="submit">提交</button>
-    <input class="btn btn-primary" type="reset" value="重置">
-</form>
-<script>
-    const school = document.getElementById('school');
-    const targets = document.getElementById('targets');
-    let targetsCount = 1;
-    school.addEventListener('click', (e) => {
-        targets.style = `display: ${school.checked ? 'none' : 'block'}`;
-    });
-    document.getElementById('add-target').addEventListener('click', (e) => {
-        targets.append(util.createElement(
-            'div',
-            {
-                class: 'row',
-                id: `target-${targetsCount}`
-            },
-            `<div class="col-8">
+    <div class="tab-pane fade" id="notice-tab-pane" role="tabpanel" aria-labelledby="notice-tab" tabindex="0">
+        <a href="/management/edit-notices">编辑通知</a>
+        <h2>发送通知</h2>
+        <form action="/management/send-notice" method="POST" id="form">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="anonymous" name="anonymous" value="on">
+                <label class="form-check-label" for="anonymous">匿名(匿名通知发出后无法修改或删除)</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="school" name="school" value="on">
+                <label class="form-check-label" for="school">学校通知</label>
+            </div>
+            <div class="row">
+                <div class="col-8">
+                    <label class="form-label">输入目标的姓名或学号</label>
+                </div>
+                <div class="col">
+                    <button class="btn btn-primary" type="button" id="add-target">添加</button>
+                </div>
+            </div>
+            <div class="form-group" id="targets">
                 <input class="form-control" type="text" name="targets" required>
             </div>
-            <div class="col">
-                <button class="btn btn-danger" type="button" onclick="document.getElementById('target-${targetsCount}').remove()">删除</button>
-            </div>`
-        ))
-        targetsCount++;
-    });
-</script>
-<hr>
-<h2>修改密码</h2>
-<form action="/user/modify-password" method="POST" id="modify-password">
-    <div class="form-group">
-        <label class="form-label" for="target">输入目标的学号</label>
-        <input class="form-control" type="number" id="target" name="target" placeholder="学号" required>
+            <div class="row">
+                <div class="col-12">
+                    <label class="form-label" for="title">输入通知标题</label>
+                    <input class="form-control" type="text" name="title" id="title" maxlength="32" required>
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="content">输入通知内容</label>
+                    <textarea class="form-control" name="content" rows="10" required></textarea>
+                </div>
+                {{submit_or_reset()}}
+            </div>
+        </form>
+        <script>
+            const school = document.getElementById('school');
+            const targets = document.getElementById('targets');
+            let targetsCount = 1;
+            school.addEventListener('click', (e) => {
+                targets.style = `display: ${school.checked ? 'none' : 'block'}`;
+            });
+            document.getElementById('add-target').addEventListener('click', (e) => {
+                targets.append(util.createElement(
+                    'div',
+                    {
+                        class: 'row',
+                        id: `target-${targetsCount}`
+                    },
+                    `<div class="col-8">
+                        <input class="form-control" type="text" name="targets" required>
+                    </div>
+                    <div class="col">
+                        <button class="btn btn-danger" type="button" onclick="document.getElementById('target-${targetsCount}').remove()">删除</button>
+                    </div>`
+                ))
+                targetsCount++;
+            });
+        </script>
     </div>
-    <input type="hidden" name="old">
-    <div class="form-group">
-        <label class="form-label" for="new">输入新密码</label>
-        <input class="form-control" type="password" id="new" name="new" placeholder="新密码" required>
+    <div class="tab-pane fade" id="password-tab-pane" role="tabpanel" aria-labelledby="password-tab" tabindex="0">
+        <form action="/user/modify-password" method="POST" id="modify-password">
+            <div class="form-group">
+                <label class="form-label" for="target">输入目标的学号</label>
+                <input class="form-control" type="number" id="target" name="target" placeholder="学号" required>
+            </div>
+            <input type="hidden" name="old">
+            <div class="form-group">
+                <label class="form-label" for="new">输入新密码</label>
+                <input class="form-control" type="password" id="new" name="new" placeholder="新密码" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="confirm">确认密码</label>
+                <input class="form-control" type="password" id="confirm" placeholder="确认密码" required>
+            </div>
+            <button class="btn btn-primary" type="submit">修改密码</button>
+        </form>
+        <script>
+            document.getElementById('modify-password').addEventListener('submit', (e) => {
+                if (document.getElementById('new').value !== document.getElementById('confirm').value) {
+                    e.preventDefault();
+                    alert('两次密码不一致');
+                }
+            });
+        </script>
     </div>
-    <div class="form-group">
-        <label class="form-label" for="confirm">确认密码</label>
-        <input class="form-control" type="password" id="confirm" placeholder="确认密码" required>
+    <div class="tab-pane fade" id="issue-tab-pane" role="tabpanel" aria-labelledby="issue-tab" tabindex="0">
+        {% if issues %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">反馈者</th>
+                    <th scope="col">时间</th>
+                    <th scope="col">内容</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for id, name, content, time in issues %}
+                <tr>
+                    <td><a href="/user/{{id}}">{{name}}</a></td>
+                    <td>{{time}}</td>
+                    <td>{{content}}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        暂时没有反馈
+        {% endif %}
     </div>
-    <button class="btn btn-primary" type="submit">修改密码</button>
-</form>
-<script>
-    document.getElementById('modify-password').addEventListener('submit', (e) => {
-        if (document.getElementById('new').value !== document.getElementById('confirm').value) {
-            e.preventDefault();
-            alert('两次密码不一致');
-        }
-    });
-</script>
-<hr>
-<h2>收到的反馈:</h2>
-<ul class="list-group">
-    {% for id, name, content, time in issues %}
-    <li class="list-group-item">{{id}} {{name}} {{time}}<br>{{content}}</li>
-    {% endfor %}
-</ul>
+</div>
 {% endblock %}

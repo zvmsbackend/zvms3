@@ -1,37 +1,40 @@
 {% extends "zvms/base.html" %}
-{% from "util.html" import vol_types %}
+{% from "util.html" import vol_types, submit_or_reset %}
 {% block container %}
 <p>指定义工是任何人都可以创建的义工, 但只有管理员能创建校内形式的. 创建时必须指定所有参加者. </p>
 <form method="POST">
-    <div class="form-group">
-        <label class="form-label" for="name">输入义工名称</label>
-        <input class="form-control" type="text" id="name" name="name" placeholder="义工名称" maxlength="32" required>
-    </div>
-    <div class="form-group">
-        <label class="form-label" for="description">输入义工描述</label>
-        <textarea class="form-control" id="description" name="description"></textarea>
-    </div>
-    <div class="form-group">
-        <label class="form-label" for="reward">输入预期获得的义工时间</label>
-        <input class="form-control" type="number" id="reward" name="reward" placeholder="义工时间" required>
-    </div>
-    {% if Permission.MANAGER.authorized(_permission) %}
-    {{vol_types((1, '校内义工'), (2, '校外义工'))}}
-    {% else %}
-    <input type="hidden" name="type" value="2">
-    {% endif %}
-    <div class="form-group" id="joiners">
-        <div class="row">
-            <div class="col-8">
-                <input class="form-control" type="text" name="joiners" placeholder="用户ID或姓名" required>
-            </div>
-            <div class="col">
-                <button class="btn btn-primary" type="button" id="add-joiner">添加</button>
+    <div class="row">
+        <div class="col-12">
+            <label class="form-label" for="name">输入义工名称</label>
+            <input class="form-control" type="text" id="name" name="name" placeholder="义工名称" maxlength="32" required>
+        </div>
+        <div class="col-12">
+            <label class="form-label" for="description">输入义工描述</label>
+            <textarea class="form-control" id="description" name="description" rows="5" required></textarea>
+        </div>
+        <div class="col-{{'6' if Permission.MANAGER.authorized(_permission) else '12'}}">
+            <label class="form-label" for="reward">输入预期获得的义工时间</label>
+            <input class="form-control" type="number" id="reward" name="reward" placeholder="义工时间" required>
+        </div>
+        {% if Permission.MANAGER.authorized(_permission) %}
+        <div class="col-6">
+            {{vol_types((1, '校内义工'), (2, '校外义工'))}}
+        </div>
+        {% else %}
+        <input type="hidden" name="type" value="2">
+        {% endif %}
+        <div class="col-12" id="joiners">
+            <div class="row">
+                <div class="col-8">
+                    <input class="form-control" type="text" name="joiners" placeholder="用户ID或姓名" required>
+                </div>
+                <div class="col">
+                    <button class="btn btn-primary" type="button" id="add-joiner">添加</button>
+                </div>
             </div>
         </div>
+        {{submit_or_reset()}}
     </div>
-    <button class="btn btn-primary" type="submit">提交</button>
-    <input class="btn btn-primary" type="reset" value="重置">
 </form>
 <script>
     const joiners = document.getElementById('joiners');

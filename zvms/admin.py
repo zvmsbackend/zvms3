@@ -46,14 +46,17 @@ def alter_permission(userident: str, perm: list[int]):
 @permission(Permission.ADMIN)
 @view
 def login(userident: str):
-    user_info = execute_sql(
+    match execute_sql(
         'SELECT userid, permission, classid FROM user WHERE {} = :userident'.format(
             'userid' if userident.isdecimal() else 'username'
         ),
         userident=userident
-    ).fetchone()
-    if user_info is None:
-        return render_template('zvms/error.html', msg='用户{}不存在'.format(userident))
+    ).fetchone():
+        case None:
+            return render_template('zvms/error.html', msg='用户{}不存在'.format(userident))
+        case [_, perm, _] if perm & Permission.ADMIN:
+            return render_template('zvms/error.html', msg='不能登录{}的账号'.format(userident))
+        case user_info: ...
     session.update(dict(zip(
         ('userid', 'permission', 'classid'),
         user_info

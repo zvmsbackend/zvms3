@@ -19,17 +19,24 @@
 <form action="/issue" method="POST">
     <div class="form-group">
         <label class="form-label" for="content">反馈:</label>
-        <input class="form-control" type="text" name="content" id="content" placeholder="输入反馈" maxlength="64" required>
+        <textarea class="form-control" name="content" id="content" maxlength="64" rows="5" required></textarea>
     </div>
     <button class="btn btn-primary" type="submit" id="submit">提交反馈</button>
 </form>
 <p>你今天还能提交{{5 - issues_today}}条反馈</p>
 <h2>已提交的反馈</h2>
-<ul class="list-group">
-    {% for time, content in issues_posted %}
-    <li class="list-group-item">{{time}} {{content}}</li>
-    {% endfor %}
-</ul>
+<table class="table">
+    <thead>
+        <th scope="col">时间</th>
+        <th scope="col">内容</th>
+    </thead>
+    <tbody>
+        {% for time, content in issues_posted %}
+        <td>{{time}}</td>
+        <td>{{content}}</td>
+        {% endfor %}
+    </tbody>
+</table>
 {% endif %}
 <script>
     const a = document.getElementById('a');

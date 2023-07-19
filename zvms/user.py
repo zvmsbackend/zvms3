@@ -66,7 +66,7 @@ def user_info(id: int):
         case None:
             abort(404)
         case [username, permission, classid, class_name]: ...
-    notices = enumerate(execute_sql(
+    notices = execute_sql(
         'SELECT notice.title, notice.content, user.userid, user.username '
         'FROM notice '
         'JOIN user ON notice.sender = user.userid '
@@ -76,7 +76,7 @@ def user_info(id: int):
         'WHERE userid = :userid) '
         'ORDER BY notice.id DESC',
         userid=session.get('userid')
-    ).fetchall())
+    ).fetchall()
     return render_template(
         'zvms/user.html', 
         userid=id,
@@ -87,8 +87,8 @@ def user_info(id: int):
         scores=get_user_scores(id),
         is_self=id == session.get('userid'),
         notices=(
-            (title, render_markdown(content), *spam)
-            for title, content, *spam in notices
+            (i, title, render_markdown(content), *spam)
+            for i, (title, content, *spam) in enumerate(notices)
         ),
         manager=manager
     )

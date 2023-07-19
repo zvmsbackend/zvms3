@@ -63,15 +63,15 @@
                 账户
             </button>
             <div class="collapse" id="account-collapse">
-            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                {% if Permission.MANAGER.authorized(_permission) %}
-                <li><a href="/management" class="link-dark d-inline-flex text-decoration-none rounded">后台管理</a></li>
-                {% endif %}
-                {% if Permission.ADMIN.authorized(_permission) %}
-                <li><a href="/admin" class="link-dark d-inline-flex text-decoration-none rounded">系统管理</a></li>
-                {% endif %}
-                <li><a href="/user/logout" class="link-dark d-inline-flex text-decoration-none rounded">登出</a></li>
-            </ul>
+                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                    {% if Permission.MANAGER.authorized(_permission) %}
+                    <li><a href="/management" class="link-body-emphasis d-inline-flex text-decoration-none rounded">后台管理</a></li>
+                    {% endif %}
+                    {% if Permission.ADMIN.authorized(_permission) %}
+                    <li><a href="/admin" class="link-body-emphasis d-inline-flex text-decoration-none rounded">系统管理</a></li>
+                    {% endif %}
+                    <li><a href="/user/logout" class="link-body-emphasis d-inline-flex text-decoration-none rounded">登出</a></li>
+                </ul>
             </div>
         </li>
     </ul>

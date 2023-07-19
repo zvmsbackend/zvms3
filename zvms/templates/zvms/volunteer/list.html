@@ -2,25 +2,22 @@
 {% from "util.html" import pagination %}
 {% block container %}
 <form action="/volunteer/search">
-    <div class="row">
-        <div class="col-8">
-            <input class="form-control" type="text" name="name" placeholder="输入义工名称">
-        </div>
-        <div class="col">
-            <button class="btn btn-primary" type="submit">搜索</button>
-        </div>
+    <div class="input-group">
+        <input class="form-control" type="text" name="name" placeholder="输入义工名称">
+        <button class="btn btn-primary" type="submit">搜索</button>
     </div>
 </form>
 {% for id, name, status, holderid, holder, type in data %}
 <div class="card">
     <div class="card-body">
-        <h5 class="card-title"><a href="/volunteer/{{id}}">{{name}}</a><small>{{id}}</small></h5>
-        <h6 class="card-subtitle mb-2 text-muted"><a href="/user/{{holderid}}">{{holder}}</a></h6>
-        <div class="card-footer">
-            <span class="badge bg-primary-subtle text-primary-emphasis rounded-pill bg-primary">{{type}}</span>
-            <span class="badge bg-{{status.badge()}}">{{status}}</span>
-        </div>
+        <h5 class="card-title"><a href="/volunteer/{{id}}">{{name}}</a></h5>
+        <h6 class="card-subtitle mb-2 text-muted">{{id}}</h6>
     </div>
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item">由<a href="/user/{{holderid}}">{{holder}}</a>创建</li>
+        <li class="list-group-item"><span class="badge bg-primary-subtle text-primary-emphasis rounded-pill bg-primary">{{type}}</span></li>
+        <li class="list-group-item"><span class="badge bg-{{status.badge()}}">{{status}}</span></li>
+    </ul>
 </div>
 {% endfor %}
 {{pagination(base_url, page, pages, total)}}
