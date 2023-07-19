@@ -67,7 +67,7 @@
         data-bs-parent="#notices"
     >
         <div class="accordion-body">
-            <p>{{content}}</p>
+            {{content|safe}}
             <small>来自 <a href="/user/{{senderid}}">{{sender}}</a></small>
         </div>
     </div>

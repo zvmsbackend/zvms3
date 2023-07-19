@@ -6,7 +6,13 @@ from flask import (
     session
 )
 
-from .util import md5, execute_sql, render_template, get_user_scores
+from .util import (
+    execute_sql, 
+    render_template, 
+    get_user_scores, 
+    render_markdown,
+    md5
+)
 from .framework import route, url, view, login_required
 from .misc import Permission
 
@@ -80,7 +86,10 @@ def user_info(id: int):
         class_name=class_name,
         scores=get_user_scores(id),
         is_self=id == session.get('userid'),
-        notices=notices,
+        notices=(
+            (title, render_markdown(content), *spam)
+            for title, content, *spam in notices
+        ),
         manager=manager
     )
 

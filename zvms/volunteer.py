@@ -17,6 +17,7 @@ from .framework import (
 from .util import (
     execute_sql, 
     render_template, 
+    render_markdown,
     get_primary_key, 
     username2userid
 )
@@ -163,7 +164,7 @@ def volunteer_info(id: int):
         'zvms/volunteer/volunteer.html',
         id=id,
         name=name,
-        description=description,
+        description=render_markdown(description),
         status=status,
         holderid=holderid,
         holder=holder,
@@ -410,7 +411,9 @@ def delete_volunteer(id: int):
 def modify_volunteer(id: int):
     return render_template('zvms/volunteer/modify.html')
 
-# 啊啊啊啊真的好难写啊
+# 义工修改功能需要判断义工类型是校内, 指定还是特殊
+# 也就是说, 需要2 * 3 = 6种逻辑(GET + POST)
+# 反正我是懒得写了
 
 # @Volunteer.route('/volunteer/<int:id>/modify')
 # @login_required

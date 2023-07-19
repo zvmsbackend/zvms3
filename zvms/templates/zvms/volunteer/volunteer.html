@@ -1,7 +1,7 @@
 {% extends "zvms/base.html" %}
 {% block container %}
 <h2>{{name}}</h2>
-<p>{{description}}</p>
+<p>{{description|safe}}</p>
 <p>{{type}} {{status}}</p>
 <p>由<a href="/user/{{holderid}}">{{holder}}</a>创建</p>
 <p>预期时长: {{reward}}分钟</p>
