@@ -1,4 +1,5 @@
 from datetime import datetime, date
+from random import choice
 import hashlib
 import re
 
@@ -91,3 +92,14 @@ def send_notice_to(title: str, content: str, target: int, class_notice: bool = F
         target=target,
         noticeid=noticeid
     )
+
+def random_color():
+    return choice([
+        'primary',
+        'secondary',
+        'light',
+        'dark',
+        'success',
+        'danger',
+        'warning'
+    ])

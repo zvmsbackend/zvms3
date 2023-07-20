@@ -84,7 +84,15 @@ CREATE TABLE IF NOT EXISTS class_notice(
     PRIMARY KEY (classid, noticeid),
     FOREIGN KEY (classid) REFERENCES class(id),
     FOREIGN KEY (noticeid) REFERENCES notice(id) 
-)
+);
+
+CREATE TABLE IF NOT EXISTS birthday(
+    userid INT PRIMARY KEY,
+    year INT,
+    month INT,
+    day INT,
+    FOREIGN KEY (userid) REFERENCES user(userid)
+);
 
 INSERT INTO class(id, name) VALUES(0, '义管会');
 

@@ -1,13 +1,25 @@
+from datetime import date
 import json
 
-from flask import Blueprint
+from flask import (
+    Blueprint,
+    redirect,
+    session
+)
 import requests
 
 from .dict import Dict
 from ..framework import (
-    toolkit_view
+    login_required,
+    toolkit_view,
+    route,
+    url
 )
-from ..util import render_template
+from ..util import (
+    render_template,
+    execute_sql,
+    random_color
+)
 
 Toolkit = Blueprint('Toolkit', __name__, url_prefix='/toolkit')
 
@@ -33,3 +45,71 @@ def wallpapers():
             }) for i, img in enumerate(data)
         ]
     )
+
+@Toolkit.route('/birthday')
+@toolkit_view
+def birthday_get():
+    today = date.today()
+    birthday_today = execute_sql(
+        'SELECT userid, username '
+        'FROM user '
+        'WHERE userid IN '
+        '(SELECT userid '
+        'FROM birthday '
+        'WHERE month = :month AND day = :day)',
+        month=today.month,
+        day=today.day
+    ).fetchall()
+    birthday_thismonth = execute_sql(
+        'SELECT b.userid, user.username, b.day '
+        'FROM birthday AS b '
+        'JOIN user ON user.userid = b.userid '
+        'WHERE b.month = :month '
+        'ORDER BY b.day',
+        month=today.month
+    )
+    profile = None
+    if 'userid' in session:
+        match execute_sql(
+            'SELECT year, month, day '
+            'FROM birthday '
+            'WHERE userid = :userid',
+            userid=session.get('userid')
+        ).fetchone():
+            case None: ...
+            case spam:
+                profile = (session.get('username'), *spam)
+    return render_template(
+        'toolkit/birthday.html',
+        today=birthday_today,
+        thismonth=birthday_thismonth,
+        profile=profile,
+        month=today.month,
+        random_color=random_color
+    )
+
+@route(Toolkit, url.birthday)
+@login_required
+@toolkit_view
+def birthday(birthday: date):
+    match execute_sql(
+        'SELECT COUNT(*) FROM birthday WHERE userid = :userid',
+        userid=session.get('userid')
+    ).fetchone():
+        case [0]: ...
+        case _:
+            return render_template('toolkit/error.html', msg='生日已注册')
+    execute_sql(
+        'INSERT INTO birthday(userid, year, month, day) '
+        'VALUES(:userid, :year, :month, :day)',
+        userid=session.get('userid'),
+        year=birthday.year,
+        month=birthday.month,
+        day=birthday.day
+    )
+    return redirect('/toolkit/birthday')
+
+@Toolkit.route('/3500')
+@toolkit_view
+def words_3500():
+    return render_template('toolkit/3500.html')
