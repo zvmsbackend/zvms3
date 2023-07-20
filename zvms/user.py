@@ -43,7 +43,7 @@ def login_post(userident: str, password: str):
         ('userid', 'username', 'permission', 'classid'),
         user_info
     )))
-    return redirect(request.referrer)
+    return redirect(request.args.get('redirect_to', '/user/{}'.format(user_info[0])))
 
 @User.route('/logout')
 @view

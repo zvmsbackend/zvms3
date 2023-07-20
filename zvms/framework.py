@@ -1,9 +1,10 @@
 from typing import Callable, _LiteralGenericAlias
 from abc import ABCMeta, abstractmethod
 from inspect import signature, _empty
-from datetime import date
 from types import GenericAlias
+from urllib.parse import quote
 from functools import wraps
+from datetime import date
 from enum import EnumType
 
 from werkzeug.datastructures import ImmutableMultiDict, FileStorage
@@ -281,7 +282,7 @@ def login_required(fn: Callable) -> Callable:
     @wraps(fn)
     def wrapper(*args, **kwargs):
         if 'userid' not in session:
-            return redirect('/user/login')
+            return redirect('/user/login?redirect_to=' + quote(request.url))
         return fn(*args, **kwargs)
     return wrapper
 

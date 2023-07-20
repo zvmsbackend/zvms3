@@ -6,6 +6,7 @@
         <span class="fs-5 fw-semibold">ZVMS</span>
     </a>
     <ul class="list-unstyled ps-0">
+        {% if _login %}
         <li class="mb-1">
             <a class="link-body-emphasis text-decoration-none rounded" href="/user/{{_userid}}">
                 <svg class="bi pe-none me-2" width="16" height="16"><use href="#home-icon"></use></svg>
@@ -99,6 +100,7 @@
                 </ul>
             </div>
         </li>
+        {% endif %}
         <li class="mb-1">
             <a class="link-body-emphasis text-decoration-none rounded" href="/about">
                 <svg class="bi pe-none me-2" width="16" height="16"><use href="#github-icon"></use></svg>
@@ -106,6 +108,7 @@
             </a>
         </li>
         <li class="border-top my-3"></li>
+        {% if _login %}
         <li class="mb-1">
             <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#account-collapse" aria-expanded="false">
                 账户
@@ -137,6 +140,7 @@
                 </ul>
             </div>
         </li>
+        {% endif %}
     </ul>
 </div>
 {% endblock %}
