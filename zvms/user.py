@@ -29,7 +29,7 @@ def login_get():
 @view
 def login_post(userident: str, password: str):
     user_info = execute_sql(
-        'SELECT userid, permission, classid '
+        'SELECT userid, username, permission, classid '
         'FROM user '
         'WHERE {} = :userident AND password = :password'.format(
             'userid' if userident.isdecimal() else 'username'
@@ -40,7 +40,7 @@ def login_post(userident: str, password: str):
     if user_info is None:
         return render_template('zvms/error.html', msg='用户名或密码错误')
     session.update(dict(zip(
-        ('userid', 'permission', 'classid'),
+        ('userid', 'username', 'permission', 'classid'),
         user_info
     )))
     return redirect(request.referrer)
@@ -67,15 +67,20 @@ def user_info(id: int):
             abort(404)
         case [username, permission, classid, class_name]: ...
     notices = execute_sql(
-        'SELECT notice.title, notice.content, user.userid, user.username '
+        'SELECT notice.title, notice.content, notice.expire, user.userid, user.username '
         'FROM notice '
         'JOIN user ON notice.sender = user.userid '
-        'WHERE notice.school OR notice.id IN '
+        'WHERE expire >= DATE("NOW") AND (notice.school OR notice.id IN '
         '(SELECT noticeid '
         'FROM user_notice '
-        'WHERE userid = :userid) '
+        'WHERE userid = :userid '
+        'UNION '
+        'SELECT noticeid '
+        'FROM class_notice '
+        'WHERE classid = :classid)) '
         'ORDER BY notice.id DESC',
-        userid=session.get('userid')
+        userid=session.get('userid'),
+        classid=session.get('classid')
     ).fetchall()
     return render_template(
         'zvms/user.html', 
@@ -86,10 +91,10 @@ def user_info(id: int):
         class_name=class_name,
         scores=get_user_scores(id),
         is_self=id == session.get('userid'),
-        notices=(
+        notices=[
             (i, title, render_markdown(content), *spam)
             for i, (title, content, *spam) in enumerate(notices)
-        ),
+        ],
         manager=manager
     )
 

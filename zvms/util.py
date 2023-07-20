@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 import hashlib
 import re
 
@@ -55,7 +55,7 @@ markdown = Markdown(HTMLRenderer())
 
 def render_markdown(content: str) -> str:
     return re.sub(
-        r'href=".+?', 'href="#', 
+        r'href="[^/].+?"', 'href="#"', 
         re.sub(r'src=".+"', '', markdown.parse(content))
     )
 
@@ -68,3 +68,26 @@ def get_user_scores(userid: int) -> dict[int, int]:
         'GROUP BY vol.type',
         userid=userid
     ).fetchall())
+
+def three_days_after():
+    today = date.today()
+    return today.replace(day=today.day + 3)
+
+def send_notice_to(title: str, content: str, target: int, class_notice: bool = False) -> None:
+    execute_sql(
+        'INSERT INTO notice(title, content, sender, school, expire) '
+        'VALUES(:title, :content, 0, FALSE, :expire)',
+        title=title,
+        content=content,
+        expire=three_days_after()
+    )
+    noticeid = get_primary_key()[0]
+    execute_sql(
+        'INSERT INTO {}({}, noticeid) '
+        'VALUES(:target, :noticeid)'.format(
+            'class_notice' if class_notice else 'user_notice',
+            'classid' if class_notice else 'userid'
+        ),
+        target=target,
+        noticeid=noticeid
+    )

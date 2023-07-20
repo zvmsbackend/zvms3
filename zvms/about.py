@@ -18,7 +18,7 @@ def index():
             'FROM issue '
             'WHERE author = :author',
             author=session.get('userid')
-        )
+        ).fetchall()
         issues_today = execute_sql(
             'SELECT COUNT(*) '
             'FROM issue '

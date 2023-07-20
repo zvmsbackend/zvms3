@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS notice(
     content TEXT,
     sender INT,
     school BOOLEAN,
+    expire DATETIME,
     FOREIGN KEY (sender) REFERENCES user(userid)
 );
 
@@ -76,6 +77,14 @@ CREATE TABLE IF NOT EXISTS user_notice(
     FOREIGN KEY (userid) REFERENCES user(userid),
     FOREIGN KEY (noticeid) REFERENCES notice(id)
 );
+
+CREATE TABLE IF NOT EXISTS class_notice(
+    classid INT,
+    noticeid INT,
+    PRIMARY KEY (classid, noticeid),
+    FOREIGN KEY (classid) REFERENCES class(id),
+    FOREIGN KEY (noticeid) REFERENCES notice(id) 
+)
 
 INSERT INTO class(id, name) VALUES(0, '义管会');
 

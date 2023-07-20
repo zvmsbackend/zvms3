@@ -23,23 +23,23 @@
         {% else %}
         <input type="hidden" name="type" value="2">
         {% endif %}
-        <div class="col-12" id="joiners">
+        <div class="col-12" id="participants">
             <div class="row">
                 <div class="col-8">
-                    <input class="form-control" type="text" name="joiners" placeholder="用户ID或姓名" value="{{joiners[0] if joiners else ''}}" required>
+                    <input class="form-control" type="text" name="participants" placeholder="用户ID或姓名" value="{{participants[0] if participants else ''}}" required>
                 </div>
                 <div class="col">
-                    <button class="btn btn-primary" type="button" id="add-joiner">添加</button>
+                    <button class="btn btn-primary" type="button" id="add-participant">添加</button>
                 </div>
             </div>
-            {% if joiners %}
-            {% for userid in joiners[1:] %}
-            <div class="row" id="joiner-{{userid}}">
+            {% if participants %}
+            {% for userid in participants[1:] %}
+            <div class="row" id="participant-{{userid}}">
                 <div class="col-8">
-                    <input class="form-control" type="text" name="joiners" placeholder="用户ID或姓名" value="{{userid}}" required>
+                    <input class="form-control" type="text" name="participants" placeholder="用户ID或姓名" value="{{userid}}" required>
                 </div>
                 <div class="col">
-                    <button class="btn btn-danger" type="button" onclick="document.getElementById('joiner-{{userid}}').remove()">删除</button>
+                    <button class="btn btn-danger" type="button" onclick="document.getElementById('participant-{{userid}}').remove()">删除</button>
                 </div>
             </div>
             {% endfor %}
@@ -49,21 +49,21 @@
     </div>
 </form>
 <script>
-    const joiners = document.getElementById('joiners');
-    let joinersCount = joiners.childElementCount;
-    document.getElementById('add-joiner').addEventListener('click', (e) => {
-        joinersCount++;
-        joiners.append(util.createElement(
+    const participants = document.getElementById('participants');
+    let participantsCount = participants.childElementCount;
+    document.getElementById('add-participant').addEventListener('click', (e) => {
+        participantsCount++;
+        participants.append(util.createElement(
             'div',
             {
                 class: 'row',
-                id: `joiner-${joinersCount}`
+                id: `participant-${participantsCount}`
             },
             `<div class="col-8">
-                <input class="form-control" type="text" name="joiners" placeholder="用户ID或姓名" required>
+                <input class="form-control" type="text" name="participants" placeholder="用户ID或姓名" required>
             </div>
             <div class="col">
-                <button class="btn btn-danger" type="button" id="add-class" onclick="document.getElementById('joiner-${joinersCount}').remove()">删除</button>
+                <button class="btn btn-danger" type="button" id="add-class" onclick="document.getElementById('participant-${participantsCount}').remove()">删除</button>
             </div>`
         ))
     });

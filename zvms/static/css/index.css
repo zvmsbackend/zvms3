@@ -72,12 +72,8 @@ html[data-bs-theme="blue"] div.flex-shrink-0 {
     background-color: #171a21;
 }
 
-html[data-bs-theme="blue"] div.container {
+html[data-bs-theme="blue"] div.container-fluid {
     background: url('https://store.st.dl.eccdnx.com/public/images/v6/colored_body_top.png?v=2') center top no-repeat #1b2838;
-}
-
-html[data-bs-theme="blue"] .card {
-    background-image: url('https://store.st.dl.eccdnx.com/public/images/v6/home/background_spotlight.jpg');
 }
 
 html[data-bs-theme="blue"] .copyright::before {
@@ -132,4 +128,23 @@ html[data-bs-theme="blue"] .copyright::before {
     --bs-form-valid-border-color: #75b798;
     --bs-form-invalid-color: rgb(201, 27, 42);
     --bs-form-invalid-border-color: #ff0015;
+}
+
+html[data-bs-theme="O"] div.flex-shrink-0 {
+    background-color: #1f2233;
+}
+
+html[data-bs-theme="O"] div.flex-shrink-0 span,
+html[data-bs-theme="O"] div.flex-shrink-0 button {
+    color: #fff;
+}
+
+html[data-bs-theme="O"] div.container-fluid {
+    background: url('https://www.miyoushe.com/_nuxt/img/background.cd0a312.png') no-repeat 0 62px;
+    background-size: 100%;
+}
+
+html[data-bs-theme="O"] {
+    --bs-body-color: #999;
+    --bs-heading-color: #000;
 }

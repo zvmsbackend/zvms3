@@ -11,6 +11,7 @@ from .util import (
     render_template, 
     render_markdown, 
     get_user_scores,
+    send_notice_to,
     md5
 )
 from .framework import login_required, permission, view, route, url
@@ -311,6 +312,14 @@ def first_audit(volid: int, userid: int):
         userid=userid,
         volid=volid
     )
+    send_notice_to(
+        '感想过审',
+        '你的[感想](/thought/{}/{})已通过初审'.format(
+            volid,
+            userid
+        ),
+        userid
+    )
     return redirect('/thought/{}/{}'.format(volid, userid))
 
 def test_final(volid: int, userid: int):
@@ -343,17 +352,34 @@ def accept_thought(volid: int, userid: int, reward: int):
         volid=volid,
         reward=reward
     )
+    send_notice_to(
+        '感想过审',
+        '你的[感想](/thought/{}/{})已被接受, 获得{}义工时间'.format(
+            volid,
+            userid,
+            reward
+        )
+    )
     return redirect('/thought/{}/{}'.format(volid, userid))
         
 # 为什么要叫foo这个名字呢?
 # 我也不知道
-def foo(status: ThoughtStatus, volid: int, userid: int) -> str:
+def foo(status: ThoughtStatus, volid: int, userid: int, notice_content: str) -> str:
     test_final(volid, userid)
     execute_sql(
         'UPDATE user_vol SET status = :status WHERE userid = :userid AND volid = :volid',
         userid=userid, 
         volid=volid,
         status=status
+    )
+    send_notice_to(
+        '义工未过审',
+        '你的[感想](/thought/{}/{}){}'.format(
+            volid,
+            userid,
+            notice_content
+        ),
+        userid
     )
     return redirect('/thought/{}/{}'.format(volid, userid))
 
@@ -362,11 +388,12 @@ def foo(status: ThoughtStatus, volid: int, userid: int) -> str:
 @permission(Permission.AUDITOR)
 @view
 def reject_thought(volid: int, userid: int):
-    return foo(ThoughtStatus.REJECTED, volid, userid)
+    foo(ThoughtStatus.REJECTED, volid, userid, '被拒绝, 不可重新提交')
 
 @route(Thought, url['volid']['userid'].audit.final.pitchback)
 @login_required
 @permission(Permission.AUDITOR)
 @view
 def pitchback_thought(volid: int, userid: int):
-    return foo(ThoughtStatus.PITCHBACK, volid, userid)
+    
+    return foo(ThoughtStatus.PITCHBACK, volid, userid, '被打回, 可以重新提交')

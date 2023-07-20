@@ -1,13 +1,13 @@
 from typing import Callable, _LiteralGenericAlias
 from abc import ABCMeta, abstractmethod
 from inspect import signature, _empty
-from datetime import date, datetime
+from datetime import date
 from types import GenericAlias
 from functools import wraps
 from enum import EnumType
 
 from werkzeug.datastructures import ImmutableMultiDict, FileStorage
-from flask import Blueprint, session, request, redirect
+from flask import Blueprint, session, request, redirect, abort
 from werkzeug.exceptions import NotFound
 
 from .misc import db, logger, Permission
@@ -39,7 +39,10 @@ integer = IntegerValidator()
 class DateValidator(Validator):
     def validate(self, /, arg: str):
         try:
-            return date.fromisoformat(arg)
+            d = date.fromisoformat(arg)
+            if d < date.today():
+                return None
+            return d
         except ValueError:
             return None
         
@@ -47,18 +50,6 @@ class DateValidator(Validator):
         return '应为日期'
 
 isodate = DateValidator()
-
-class DateTimeValidator(Validator):
-    def validate(self, /, arg: str):
-        try:
-            return datetime.fromisoformat(arg)
-        except ValueError:
-            return None
-        
-    def errormsg(self) -> str:
-        return '应为日期时间'
-
-isodatetime = DateTimeValidator()
 
 class LengthValidator(Validator):
     def __init__(self, /, max: int) -> None:
@@ -110,6 +101,8 @@ class ListValidator(Validator):
             if tmp is None:
                 return None
             ret.append(tmp)
+        if len(ret) != len(set(ret)):
+            return None
         return ret
     
     def errormsg(self) -> str:
@@ -213,7 +206,6 @@ def annotation2validator(annotation: type | Validator, default = _empty) -> Vali
         bool: boolean,
         str: any,
         date: isodate,
-        datetime: isodatetime,
         int: integer,
         FileStorage: file
     }.get(
@@ -299,7 +291,6 @@ def permission(perm: Permission) -> Callable[[Callable], Callable]:
         def wrapper(*args, **kwargs):
             if int(session.get('permission')) & (perm | Permission.ADMIN):
                 return fn(*args, **kwargs)
-            from .util import render_template
-            return render_template('zvms/error.html', msg='权限不足')
+            abort(403)
         return wrapper
     return deco

@@ -47,7 +47,7 @@ def alter_permission(userident: str, perm: list[int]):
 @view
 def login(userident: str):
     match execute_sql(
-        'SELECT userid, permission, classid FROM user WHERE {} = :userident'.format(
+        'SELECT userid, username, permission, classid FROM user WHERE {} = :userident'.format(
             'userid' if userident.isdecimal() else 'username'
         ),
         userident=userident
@@ -58,7 +58,7 @@ def login(userident: str):
             return render_template('zvms/error.html', msg='不能登录{}的账号'.format(userident))
         case user_info: ...
     session.update(dict(zip(
-        ('userid', 'permission', 'classid'),
+        ('userid', 'username', 'permission', 'classid'),
         user_info
     )))
     return redirect('/user/login')

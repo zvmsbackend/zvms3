@@ -57,22 +57,26 @@
     </div>
     <div class="tab-pane fade" id="notice-tab-pane" role="tabpanel" aria-labelledby="notice-tab" tabindex="0">
     <div class="accordion" id="notices">
-    {% for i, title, content, senderid, sender in notices %}
-    <div class="accordion-item">
-        <h2 class="accordion-header" id="heading-{{i}}">
-            <button class="accordion-button{{'' if i == 0 else ' collapsed'}}" type="button" data-bs-toggle="collapse" data-bs-target="#notice-{{i}}" aria-expanded="true" aria-controls="notice-{{i}}">
-                {{title}}
-            </button>
-        </h2>
-        <div id="notice-{{i}}" class="accordion-collapse collapse{{' show' if i == 0 else ''}}" aria-labelledby="heading-{{i}}" data-bs-parent="#notices">
-            <div class="accordion-body">
-                {{content|safe}}
-                <small>来自 <a href="/user/{{senderid}}">{{sender}}</a></small>
+        {% if notices %}
+        {% for i, title, content, expire, senderid, sender in notices %}
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-{{i}}">
+                <button class="accordion-button{{'' if i == 0 else ' collapsed'}}" type="button" data-bs-toggle="collapse" data-bs-target="#notice-{{i}}" aria-expanded="true" aria-controls="notice-{{i}}">
+                    {{title}}
+                </button>
+            </h2>
+            <div id="notice-{{i}}" class="accordion-collapse collapse{{' show' if i == 0 else ''}}" aria-labelledby="heading-{{i}}" data-bs-parent="#notices">
+                <div class="accordion-body">
+                    {{content|safe}}
+                    <small>来自 <a href="/user/{{senderid}}">{{sender}}</a> 过期于{{expire}}</small>
+                </div>
             </div>
         </div>
+        {% endfor %}
+        {% else %}
+        没有通知
+        {% endif %}
     </div>
-</div>
-{% endfor %}
 </div>
 {% endif %}
 {% endblock %}

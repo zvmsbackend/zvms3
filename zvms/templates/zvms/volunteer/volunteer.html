@@ -61,15 +61,15 @@
     </div>
     <h4>已参加者:</h4>
     <ul class="list-group">
-        {% for joinerid, joinername, thought_visible in joiners %}
+        {% for participantid, participantname, thought_visible in participants %}
         <li class="list-group-item">
-            <a href="/user/{{joinerid}}">{{joinername}}</a>
+            <a href="/user/{{participantid}}">{{participantname}}</a>
             {% if thought_visible %}
-            &nbsp;<a href="/thought/{{id}}/{{joinerid}}">查看感想</a> 
+            &nbsp;<a href="/thought/{{id}}/{{participantid}}">查看感想</a> 
             {% endif %}
-            {% if joinerid == _userid or Permission.CLASS.authorized(_permission) %}
+            {% if participantid == _userid or Permission.CLASS.authorized(_permission) %}
             <form action="/volunteer/{{id}}/signup/rollback" method="POST">
-                <input type="hidden" name="userid" value="{{joinerid}}">
+                <input type="hidden" name="userid" value="{{participantid}}">
                 <button class="btn btn-danger" type="submit">撤回报名</button>
             </form>
             {% endif %}
