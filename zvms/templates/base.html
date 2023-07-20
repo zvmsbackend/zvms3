@@ -10,7 +10,7 @@
     <script src="https://cdn.staticfile.org/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script src="/static/js/index.js"></script>
 </head>
-<body class="d-flex flex-nowrap">
+<body class="{% block body_style %}{% endblock %}">
     {% block nav %}{% endblock %}
     <div class="container-fluid">
     {% block container %}{% endblock %}

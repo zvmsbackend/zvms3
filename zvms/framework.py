@@ -1,4 +1,4 @@
-from typing import Callable, _LiteralGenericAlias
+from typing import Callable, Any, _LiteralGenericAlias, overload
 from abc import ABCMeta, abstractmethod
 from inspect import signature, _empty
 from types import GenericAlias
@@ -190,8 +190,16 @@ class Url:
     def __getattr__(self, /, attr: str) -> 'Url':
         return Url(self.string + '/' + attr.replace('_', '-'), self.params)
     
-    def __getitem__(self, /, index: str) -> 'Url':
-        return Url('{}/<int:{}>'.format(self.string, index), self.params | frozenset([index]))
+    def __getitem__(self, /, index: str | tuple[str, Any]) -> 'Url':
+        match index:
+            case str():
+                string = '<int:{}>'.format(index)
+            case [index, 'str']: 
+                string ='<{}>'.format(index)
+        return Url(
+            '{}/{}'.format(self.string, string),
+            self.params | frozenset([index])
+        )
     
     def root(self = None) -> 'Url':
         return Url('/')
@@ -202,26 +210,32 @@ class ZvmsError(Exception): ...
 
 def annotation2validator(annotation: type | Validator, default = _empty) -> Validator:
     if isinstance(annotation, Validator):
-        return annotation
-    ret = EnumValidator(annotation) if isinstance(annotation, EnumType) else {
-        bool: boolean,
-        str: any,
-        date: isodate,
-        int: integer,
-        FileStorage: file
-    }.get(
-        annotation, 
-        ((lambda: ListValidator(annotation2validator(annotation.__args__[0], _empty), False))
-        if isinstance(annotation, GenericAlias) else 
-        (lambda: LiteralValidator(annotation.__args__))
-        if isinstance(annotation, _LiteralGenericAlias)
-        else (lambda: any))()
-    )
+        ret = annotation
+    else:
+        ret = EnumValidator(annotation) if isinstance(annotation, EnumType) else {
+            bool: boolean,
+            str: any,
+            date: isodate,
+            int: integer,
+            FileStorage: file
+        }.get(
+            annotation, 
+            ((lambda: ListValidator(annotation2validator(annotation.__args__[0], _empty), False))
+            if isinstance(annotation, GenericAlias) else 
+            (lambda: LiteralValidator(annotation.__args__))
+            if isinstance(annotation, _LiteralGenericAlias)
+            else (lambda: any))()
+        )
     if default is _empty:
         return ret
     return DefaultValidator(ret, default)
 
-def route(blueprint: Blueprint, url: Url, method: str = 'POST') -> Callable[[Callable], Callable]:
+def route(
+    blueprint: Blueprint, 
+    url: Url, 
+    method: str = 'POST', 
+    error_template: str = 'zvms/error.html'
+) -> Callable[[Callable], Callable]:
     def deco(fn: Callable) -> Callable:
         form_params = {
             name: annotation2validator(param.annotation, param.default)
@@ -238,14 +252,14 @@ def route(blueprint: Blueprint, url: Url, method: str = 'POST') -> Callable[[Cal
                 if arg is None and not v.__class__.accept_none:
                     from .util import render_template
                     return render_template(
-                        'zvms/error.html',
+                        error_template,
                         msg='表单校验错误: 缺少{}'.format(k)
                     )
                 arg = v.validate(arg)
                 if arg is None:
                     from .util import render_template
                     return render_template(
-                        'zvms/error.html',
+                        error_template,
                         msg='表单校验错误: {} {}'.format(k, v.errormsg())
                     )
                 form_args[k] = arg
@@ -257,26 +271,33 @@ def route(blueprint: Blueprint, url: Url, method: str = 'POST') -> Callable[[Cal
         )
         return wrapper
     return deco
+
+@overload
+def view(fn: Callable) -> Callable: ...
     
-def view(fn: Callable) -> Callable:
-    @wraps(fn)
-    def wrapper(*args, **kwargs):
-        try:
-            ret = fn(*args, **kwargs)
-            db.session.commit()
-            return ret
-        except NotFound:
-            raise
-        except Exception as exn:
-            db.session.rollback()
-            logger.exception(exn)
-            from .util import render_template
-            return render_template(
-                'zvms/error.html', 
-                msg=exn.args[0] if isinstance(exn, ZvmsError)
-                else '服务器遇到了{}错误'.format(exn.__class__.__qualname__)
-            )
-    return wrapper
+def view(error_template: str = 'zvms/error.html') -> Callable[[Callable], Callable]:
+    if callable(error_template):
+        return view()(error_template)
+    def deco(fn: Callable) -> Callable:
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            try:
+                ret = fn(*args, **kwargs)
+                db.session.commit()
+                return ret
+            except NotFound:
+                raise
+            except Exception as exn:
+                db.session.rollback()
+                logger.exception(exn)
+                from .util import render_template
+                return render_template(
+                    error_template, 
+                    msg=exn.args[0] if isinstance(exn, ZvmsError)
+                    else '服务器遇到了{}错误'.format(exn.__class__.__qualname__)
+                )
+        return wrapper
+    return deco
 
 def login_required(fn: Callable) -> Callable:
     @wraps(fn)
@@ -295,3 +316,5 @@ def permission(perm: Permission) -> Callable[[Callable], Callable]:
             abort(403)
         return wrapper
     return deco
+
+toolkit_view = view('toolkit/error.html')

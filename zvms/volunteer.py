@@ -3,7 +3,12 @@ from urllib.parse import quote
 from typing import Literal
 from datetime import date
 
-from flask import Blueprint, abort, session, redirect
+from flask import (
+    Blueprint, 
+    redirect,
+    abort, 
+    session 
+)
 
 from .framework import (
     ZvmsError,
@@ -23,7 +28,12 @@ from .util import (
     username2userid,
     send_notice_to
 )
-from .misc import Permission, VolStatus, VolType, ThoughtStatus
+from .misc import (
+    ThoughtStatus,
+    Permission, 
+    VolStatus, 
+    VolType
+)
 
 Volunteer = Blueprint('Volunteer', __name__, url_prefix='/volunteer')
 

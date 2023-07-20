@@ -13,7 +13,12 @@ from .util import (
     render_markdown,
     md5
 )
-from .framework import route, url, view, login_required
+from .framework import (
+    login_required,
+    route, 
+    view,
+    url
+)
 from .misc import Permission
 
 User = Blueprint('User', __name__, url_prefix='/user')

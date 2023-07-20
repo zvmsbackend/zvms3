@@ -2,8 +2,14 @@ import io
 import csv
 import os.path
 
-from flask import Blueprint, send_file, abort, redirect, session
 from werkzeug.datastructures import FileStorage
+from flask import (
+    Blueprint, 
+    send_file, 
+    redirect, 
+    abort, 
+    session
+)
 
 from .util import (
     ZvmsError,
@@ -14,8 +20,18 @@ from .util import (
     send_notice_to,
     md5
 )
-from .framework import login_required, permission, view, route, url
-from .misc import Permission, ThoughtStatus, VolType
+from .framework import (
+    login_required, 
+    permission, 
+    route, 
+    view, 
+    url
+)
+from .misc import (
+    ThoughtStatus, 
+    Permission, 
+    VolType
+)
 
 Thought = Blueprint('Thought', __name__, url_prefix='/thought')
 

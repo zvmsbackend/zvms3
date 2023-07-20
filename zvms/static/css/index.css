@@ -170,6 +170,12 @@ html[data-bs-theme="P"] .copyright::before {
     --bs-btn-active-color: #212529;
 }
 
+[data-bs-theme="P"] .active>.page-link {
+    --bs-pagination-active-color: #212529;
+    --bs-pagination-active-bg: #F7991C;
+    --bs-pagination-active-border-color: #F7991C;
+}
+
 [data-bs-theme="P"] .accordion-button {
     --bs-accordion-active-bg: #000;
     --bs-accordion-active-color: #fff;

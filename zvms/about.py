@@ -1,9 +1,23 @@
 from datetime import date
 
-from flask import Blueprint, redirect, request, session
+from flask import (
+    Blueprint, 
+    redirect, 
+    request, 
+    session
+)
 
-from .util import execute_sql, inexact_now, render_template
-from .framework import route, url, lengthedstr, view
+from .util import (
+    execute_sql, 
+    inexact_now, 
+    render_template
+)
+from .framework import (
+    lengthedstr,
+    route,
+    view,
+    url
+)
 
 About = Blueprint('About', __name__)
 

@@ -1,6 +1,11 @@
 from datetime import date
 
-from flask import Blueprint, render_template, redirect, session
+from flask import (
+    Blueprint, 
+    render_template, 
+    redirect, 
+    session
+)
 
 from .util import (
     execute_sql, 
@@ -9,7 +14,13 @@ from .util import (
     render_template,
     three_days_after
 )
-from .framework import permission, login_required, route, view, url
+from .framework import (
+    login_required, 
+    permission, 
+    route, 
+    view, 
+    url
+)
 from .misc import Permission
 
 Management = Blueprint('Management', __name__, url_prefix='/management')

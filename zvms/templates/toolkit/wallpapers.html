@@ -1,0 +1,27 @@
+{% extends "toolkit/base.html" %}
+{% block container %}
+<div id="wallpapers" class="carousel slide" data-bs-ride="carousel">
+    <div class="carousel-indicators">
+        {% for i, _ in imgs %}
+        <button type="button" data-bs-target="#wallpapers" data-bs-slide-to="{{i}}" class="{{'active' if i == 0 else ''}}" />
+        {% endfor %}
+    </div>
+    <div class="carousel-inner">
+    {% for i, img in imgs %}
+    <div class="carousel-item{{' active' if i == 0 else ''}}">
+        <img class="img-fluid" src="{{img.url}}">
+        <div class="carousel-caption">
+            <h3>{{img.title}}</h3>
+            <p>{{img.copyright}}</p>
+        </div>
+    </div>
+    {% endfor %}
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#wallpapers" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#wallpapers" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+    </button>
+</div>
+{% endblock %}

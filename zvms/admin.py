@@ -1,9 +1,19 @@
 from functools import reduce
 from operator import or_
 
-from flask import Blueprint, redirect, session
+from flask import (
+    Blueprint, 
+    redirect, 
+    session
+)
 
-from .framework import route, login_required, permission, view, url
+from .framework import (
+    login_required, 
+    permission, 
+    route, 
+    view, 
+    url
+)
 from .util import render_template, execute_sql
 from .misc import Permission, permission2str
 
