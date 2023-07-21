@@ -17,6 +17,7 @@ from ..framework import (
     url
 )
 from ..util import (
+    get_with_timeout,
     render_template,
     execute_sql,
     random_color
@@ -36,7 +37,7 @@ def index():
 @Toolkit.route('/wallpapers')
 @toolkit_view
 def wallpapers():
-    res = requests.get(
+    res = get_with_timeout(
         'https://bing.com/HPImageArchive.aspx?format=js&idx=0&n=7')
     data = json.loads(res.text)['images']
     return render_template(
@@ -97,7 +98,7 @@ def birthday_get():
 @route(Toolkit, url.birthday)
 @login_required
 @toolkit_view
-def birthday(birthday: date):
+def birthday_post(birthday: date):
     match execute_sql(
         'SELECT COUNT(*) FROM birthday WHERE userid = :userid',
         userid=session.get('userid')
@@ -125,7 +126,7 @@ def words_3500():
 @Toolkit.route('/weather')
 @toolkit_view
 def msn_weather():
-    res = requests.get('https://www.msn.cn/zh-cn/weather/forecast/')
+    res = get_with_timeout('https://www.msn.cn/zh-cn/weather/forecast/')
     match = re.search(
         r'\<script id="redux-data" type="application/json"\>([\s\S]+?)\</script\>', res.text)
     data = json.loads(match.group(1))

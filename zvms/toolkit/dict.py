@@ -5,7 +5,6 @@ from flask import (
     abort
 )
 from bs4.element import Tag
-import requests
 import bs4
 
 from ..framework import (
@@ -14,7 +13,7 @@ from ..framework import (
     route,
     url
 )
-from ..util import render_template
+from ..util import render_template, get_with_timeout
 
 Dict = Blueprint('Dict', __name__, url_prefix='/dict')
 
@@ -56,7 +55,7 @@ def bing_dictionary_get(
     if not word:
         return render_template('toolkit/error.html', msg=prompt + '不可为空')
     if kind == 'bing':
-        res = requests.get('https://cn.bing.com/dict?q=' + quote(word))
+        res = get_with_timeout('https://cn.bing.com/dict?q=' + quote(word))
         soup = bs4.BeautifulSoup(res.text, 'lxml')
         pronunciation = soup.find('div', {'class': 'hd_p1_1'}).get_text()
         return render_template(
@@ -69,7 +68,7 @@ def bing_dictionary_get(
             )),
             examples_link='/toolkit/dict/bing/examples?word=' + quote(word)
         )
-    res = requests.get('https://www.zdic.net/hans/' + quote(word))
+    res = get_with_timeout('https://www.zdic.net/hans/' + quote(word))
     if not res.text:
         return render_template('toolkit/error.html', msg='查无此结果')
     soup = bs4.BeautifulSoup(res.text, 'lxml')
@@ -114,10 +113,8 @@ def bing_examples(
     word: str,
     page: int = 1
 ):
-    res = requests.get('https://bing.com/dict/service?q={}&offset={}&dtype=sen&&qs=n'.format(
-        word,
-        page * 10 - 10
-    ))
+    res = get_with_timeout(
+        f'https://bing.com/dict/service?q={word}&offset={page * 10 - 10}&dtype=sen&&qs=n')
     soup = bs4.BeautifulSoup(res.text, 'lxml')
     pages = soup.find('div', class_='b_pag')
     if pages is None:

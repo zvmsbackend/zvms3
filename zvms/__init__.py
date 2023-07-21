@@ -1,3 +1,9 @@
+"""
+义工管理系统
+
+关注https://github.com/zvmsbackend/zvms-bootstrap喵
+"""
+
 from flask import Flask, redirect, send_file
 
 from .management import Management
@@ -18,11 +24,13 @@ db.init_app(app)
 
 @app.route('/')
 def index():
+    """重定向到登录页面, 如果已经登录了则会被重定向到用户主页"""
     return redirect('/user/login')
 
 
 @app.route('/favicon.ico')
 def favicon():
+    """网页图标"""
     return send_file('favicon.ico')
 
 

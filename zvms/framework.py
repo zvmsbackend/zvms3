@@ -90,7 +90,7 @@ boolean = BoolValidator()
 
 
 class AnyValidator(Validator):
-    def validate(cls, /, arg: str):
+    def validate(self, /, arg: str):
         return arg
 
     def errormsg(self) -> str:
@@ -207,10 +207,10 @@ class Url:
         self.string = string
         self.params = params
 
-    def __getattr__(self, /, attr: str) -> 'Url':
+    def __getattr__(self, attr: str) -> 'Url':
         return Url(self.string + '/' + attr.replace('_', '-'), self.params)
 
-    def __getitem__(self, /, index: str | tuple[str, Any]) -> 'Url':
+    def __getitem__(self, index: str | tuple[str, Any]) -> 'Url':
         match index:
             case str():
                 string = '<int:{}>'.format(index)

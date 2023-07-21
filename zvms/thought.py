@@ -63,28 +63,28 @@ def select_thoughts(where_clause: str, args: dict, page: str, base_url: str):
         'SELECT COUNT(*) '
         'FROM user_vol AS uv '
         'JOIN volunteer AS vol ON vol.id = uv.volid '
-        'WHERE uv.status != 1 AND ({})'.format(where_clause),
+        f'WHERE uv.status != 1 AND ({where_clause})',
         **args
     ).fetchone()[0]
-    thought_info = execute_sql(
+    thoughts = execute_sql(
         'SELECT uv.userid, user.username, uv.volid, vol.name, uv.status '
         'FROM user_vol AS uv '
         'JOIN user ON user.userid = uv.userid '
         'JOIN volunteer AS vol ON vol.id = uv.volid '
-        'WHERE uv.status != 1 AND ({}) '
+        f'WHERE uv.status != 1 AND ({where_clause}) '
         'ORDER BY uv.volid DESC '
         'LIMIT 10 '
-        'OFFSET :offset'.format(where_clause),
+        'OFFSET :offset',
         **args,
         offset=page * 10
     ).fetchall()
-    if not thought_info:
+    if not thoughts:
         abort(404)
     return render_template(
         'zvms/thought/list.html',
         data=[
             (*spam, ThoughtStatus(status), ThoughtStatus(status).badge())
-            for *spam, status in thought_info
+            for *spam, status in thoughts
         ],
         base_url=base_url,
         page=page,
@@ -234,7 +234,6 @@ def edit_thought_get(volid: int, userid: int):
 @login_required
 @view
 def edit_thought(volid: int, userid: int, thought: str, pictures: list[str], files: list[FileStorage], submit: bool):
-    from flask import request
     if userid != int(session.get('userid')):
         return render_template('zvms/error.html', msg='不能编辑他人的感想')
     match execute_sql(
@@ -259,7 +258,7 @@ def edit_thought(volid: int, userid: int, thought: str, pictures: list[str], fil
             volid=volid,
             filename=filename
         ).fetchone()[0] == 0:
-            return render_template('zvms/error.html', msg='图片{}不存在'.format(filename))
+            return render_template('zvms/error.html', msg=f'图片{filename}不存在')
         execute_sql(
             'INSERT INTO picture(volid, userid, filename) '
             'VALUES(:volid, :userid, :filename)',
@@ -270,7 +269,7 @@ def edit_thought(volid: int, userid: int, thought: str, pictures: list[str], fil
     for file in files:
         data = file.read()
         ext = file.filename.split('.')[-1]
-        filename = '{}.{}'.format(md5(data), ext)
+        filename = f'{md5(data)}.{ext}'
         match execute_sql(
             'SELECT * FROM picture '
             'WHERE volid = :volid AND userid = :userid AND filename = :filename',
@@ -314,7 +313,7 @@ def edit_thought(volid: int, userid: int, thought: str, pictures: list[str], fil
             userid=userid,
             volid=volid
         )
-    return redirect('/thought/{}/{}'.format(volid, userid))
+    return redirect(f'/thought/{volid}/{userid}')
 
 
 @route(Thought, url['volid']['userid'].audit.first)
@@ -339,13 +338,10 @@ def first_audit(volid: int, userid: int):
     )
     send_notice_to(
         '感想过审',
-        '你的[感想](/thought/{}/{})已通过初审'.format(
-            volid,
-            userid
-        ),
+        f'你的[感想](/thought/{volid}/{userid})已通过初审',
         userid
     )
-    return redirect('/thought/{}/{}'.format(volid, userid))
+    return redirect(f'/thought/{volid}/{userid}')
 
 
 def test_final(volid: int, userid: int):
@@ -381,11 +377,8 @@ def accept_thought(volid: int, userid: int, reward: int):
     )
     send_notice_to(
         '感想过审',
-        '你的[感想](/thought/{}/{})已被接受, 获得{}义工时间'.format(
-            volid,
-            userid,
-            reward
-        )
+        f'你的[感想](/thought/{volid}/{userid})已被接受, 获得{reward}义工时间',
+        userid
     )
     return redirect('/thought/{}/{}'.format(volid, userid))
 
@@ -403,14 +396,10 @@ def foo(status: ThoughtStatus, volid: int, userid: int, notice_content: str) -> 
     )
     send_notice_to(
         '义工未过审',
-        '你的[感想](/thought/{}/{}){}'.format(
-            volid,
-            userid,
-            notice_content
-        ),
+        f'你的[感想](/thought/{volid}/{userid}){notice_content}',
         userid
     )
-    return redirect('/thought/{}/{}'.format(volid, userid))
+    return redirect(f'/thought/{volid}/{userid}')
 
 
 @route(Thought, url['volid']['userid'].audit.final.reject)

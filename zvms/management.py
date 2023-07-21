@@ -106,7 +106,7 @@ def edit_notices_get():
                     'TRUE' if Permission.ADMIN.authorized() else 'notice.sender = :sender'
                 ),
                 sender=session.get('userid')
-            )
+            ).fetchall()
             if (targets := list(enumerate(execute_sql(
                 'SELECT user.userid, user.username '
                 'FROM user_notice AS un '
@@ -129,7 +129,7 @@ def edit_notices_post(noticeid: int, title: str, content: str, targets: list[str
         try:
             userids = username2userid(targets)
         except ValueError as exn:
-            return render_template('zvms/error.html', msg='用户{}不存在'.format(exn.args[0]))
+            return render_template('zvms/error.html', msg=f'用户{exn.args[0]}不存在'.format(exn.args[0]))
         execute_sql(
             'DELETE FROM user_notice '
             'WHERE noticeid = :noticeid',

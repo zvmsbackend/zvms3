@@ -5,8 +5,10 @@ import re
 
 from flask import session, render_template as _render_template
 from mistune import Markdown, HTMLRenderer
+from requests.exceptions import Timeout
 from sqlalchemy.sql import text
 from sqlalchemy import Result
+import requests
 
 from .misc import db, Permission
 from .framework import ZvmsError
@@ -17,9 +19,9 @@ def execute_sql(sql: str, **kwargs) -> Result:
 
 
 def md5(s: bytes) -> str:
-    md5 = hashlib.md5()
-    md5.update(s)
-    return md5.hexdigest()
+    h = hashlib.md5()
+    h.update(s)
+    return h.hexdigest()
 
 
 def inexact_now() -> datetime:
@@ -37,7 +39,7 @@ def username2userid(usernames: list[str]) -> list[int]:
             username=username
         ).fetchone():
             case None:
-                raise ZvmsError('用户{}不存在'.format(username))
+                raise ZvmsError(f'用户{username}不存在')
             case [id]:
                 ret.append(id)
     return ret
@@ -115,3 +117,9 @@ def random_color():
         'danger',
         'warning'
     ])
+
+def get_with_timeout(url: str, timeout: int = 1) -> requests.Response:
+    try:
+        return requests.get(url, timeout=timeout)
+    except Timeout as exn:
+        raise ZvmsError('服务器网络错误') from exn

@@ -28,14 +28,14 @@ User = Blueprint('User', __name__, url_prefix='/user')
 @view
 def login_get():
     if 'userid' in session:
-        return redirect('/user/{}'.format(session.get('userid')))
+        return redirect(f'/user/{session.get("userid")}')
     return render_template('zvms/login.html')
 
 
 @route(User, url.login)
 @view
 def login_post(userident: str, password: str):
-    user_info = execute_sql(
+    info = execute_sql(
         'SELECT userid, username, permission, classid '
         'FROM user '
         'WHERE {} = :userident AND password = :password'.format(
@@ -44,13 +44,13 @@ def login_post(userident: str, password: str):
         userident=userident,
         password=md5(password.encode())
     ).fetchone()
-    if user_info is None:
+    if info is None:
         return render_template('zvms/error.html', msg='用户名或密码错误')
     session.update(dict(zip(
         ('userid', 'username', 'permission', 'classid'),
-        user_info
+        info
     )))
-    return redirect(request.args.get('redirect_to', '/user/{}'.format(user_info[0])))
+    return redirect(request.args.get('redirect_to', f'/user/{info[0]}'))
 
 
 @User.route('/logout')

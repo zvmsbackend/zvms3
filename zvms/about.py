@@ -14,6 +14,7 @@ from .util import (
 )
 from .framework import (
     lengthedstr,
+    login_required,
     route,
     view,
     url
@@ -49,6 +50,7 @@ def index():
 
 
 @route(About, url.issue)
+@login_required
 @view
 def issue(content: lengthedstr[64]):
     times = execute_sql(

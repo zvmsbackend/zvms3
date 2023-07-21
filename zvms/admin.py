@@ -41,9 +41,9 @@ def alter_permission(userident: str, perm: list[int]):
         userident=userident
     ).fetchone():
         case None:
-            return render_template('zvms/error.html', msg='用户{}不存在'.format(userident))
+            return render_template('zvms/error.html', msg=f'用户{userident}不存在')
         case [_, p] if p & Permission.ADMIN:
-            return render_template('zvms/error.html', msg='用户{}权限不可修改'.format(userident))
+            return render_template('zvms/error.html', msg=f'用户{userident}权限不可修改')
         case [userid, _]: ...
     execute_sql(
         'UPDATE user SET permission = :perm '
@@ -51,7 +51,7 @@ def alter_permission(userident: str, perm: list[int]):
         perm=reduce(or_, perm, 0),
         userid=userid
     )
-    return redirect('/user/{}'.format(userid))
+    return redirect(f'/user/{userid}')
 
 
 @route(Admin, url.login)
@@ -66,9 +66,9 @@ def login(userident: str):
         userident=userident
     ).fetchone():
         case None:
-            return render_template('zvms/error.html', msg='用户{}不存在'.format(userident))
+            return render_template('zvms/error.html', msg=f'用户{userident}不存在')
         case [_, perm, _] if perm & Permission.ADMIN:
-            return render_template('zvms/error.html', msg='不能登录{}的账号'.format(userident))
+            return render_template('zvms/error.html', msg=f'不能登录{userident}的账号')
         case user_info: ...
     session.update(dict(zip(
         ('userid', 'username', 'permission', 'classid'),
