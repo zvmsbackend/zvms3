@@ -10,7 +10,8 @@
         </div>
     </div>
     <div class="col">
-        <div data-bs-spy="scroll" data-bs-target="#list-nav" data-bs-smooth-scroll="true" style="height: 100vh; overflow: auto" tabindex="0">
+        <div data-bs-spy="scroll" data-bs-target="#list-nav" data-bs-smooth-scroll="true"
+            style="height: 100vh; overflow: auto" tabindex="0">
             {% for id, title, content, expire, senderid, sender, targets in notices %}
             <div class="card">
                 <div class="card-body">
@@ -22,36 +23,40 @@
                                 通知发送给了:
                             </div>
                             <div class="col">
-                                <button class="btn btn-primary targets-adder" type="button" notice-id="{{id}}">添加</button>
+                                <button class="btn btn-primary targets-adder" type="button"
+                                    notice-id="{{id}}">添加</button>
                             </div>
                         </div>
                         <div class="form-group targets-{{id}}">
-                        {% for i, (userid, username) in targets %}
-                        {% if i == 0 %}
-                        {{username}}
-                        <input class="form-control" type="text" name="targets" value="{{userid}}" required>
-                        {% else %}
-                        <div class="row" id="target-{{i}}">
+                            {% for i, (userid, username) in targets %}
+                            {% if i == 0 %}
                             {{username}}
-                            <div class="col-8">
-                                <input class="form-control" type="text" name="targets" value="{{userid}}" required>
+                            <input class="form-control" type="text" name="targets" value="{{userid}}" required>
+                            {% else %}
+                            <div class="row" id="target-{{i}}">
+                                {{username}}
+                                <div class="col-8">
+                                    <input class="form-control" type="text" name="targets" value="{{userid}}" required>
+                                </div>
+                                <div class="col">
+                                    <button class="btn btn-danger" type="button"
+                                        onclick="document.getElementById('target-{{i}}').remove()">删除</button>
+                                </div>
                             </div>
-                            <div class="col">
-                                <button class="btn btn-danger" type="button" onclick="document.getElementById('target-{{i}}').remove()">删除</button>
-                            </div>
-                        </div>
-                        {% endif %}
-                        {% endfor %}
+                            {% endif %}
+                            {% endfor %}
                         </div>
                         {% endif %}
                         <div class="row">
                             <div class="col-6">
                                 <label class="form-label" for="title">输入标题</label>
-                                <input class="form-control" type="text" id="title" name="title" value="{{title}}" maxlength="32" required>
+                                <input class="form-control" type="text" id="title" name="title" value="{{title}}"
+                                    maxlength="32" required>
                             </div>
                             <div class="col-6">
                                 <label class="form-label" for="expire">输入过期时间</label>
-                                <input class="form-control" type="date" id="expire" name="expire" value="{{expire}}" required>
+                                <input class="form-control" type="date" id="expire" name="expire" value="{{expire}}"
+                                    required>
                             </div>
                             <div class="col-12">
                                 <label class="form-label" for="content">输入通知内容</label>

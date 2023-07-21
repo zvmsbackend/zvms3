@@ -29,14 +29,8 @@
             </div>
             <div class="form-check">
                 <input class="form-check-input" type="checkbox" id="school" name="school" value="on">
-                <label class="form-check-label" for="school">学校通知</label>
+                <label class="form-check-label" for="anonymous">学校通知</label>
             </div>
-            <select class="form-select" name="type" id="type">
-                <option selected>选择通知类型</option>
-                <option value="1">学校通知</option>
-                <option value="2">班级通知</option>
-                <option value="3">用户通知</option>
-            </select>
             <div class="row">
                 <div class="col-8">
                     <label class="form-label">输入目标的姓名或学号</label>
@@ -55,7 +49,7 @@
                 </div>
                 <div class="col-6">
                     <label class="form-label" for="expire">输入过期时间</label>
-                    <input class="form-control" type="date" name="expire" id="expire" value="{{today}}" required>
+                    <input class="form-control" type="date" name="expire" id="expire" value="{{three_days_later}}" required>
                 </div>
                 <div class="col-12">
                     <label class="form-label" for="content">输入通知内容</label>
@@ -65,12 +59,12 @@
             </div>
         </form>
         <script>
-            const type = document.getElementById('type');
+            const school = document.getElementById('school');
             const targets = document.getElementById('targets');
             let targetsCount = 1;
-            type.addEventListener('change', (e) => {
-                targets.style = `display: ${e.value == 1 ? 'none' : 'block'}`;
-            })
+            school.addEventListener('change', (e) => {
+                targets.style = `display: ${school.checked ? 'none' : 'block'}`;
+            });
             document.getElementById('add-target').addEventListener('click', (e) => {
                 targets.append(util.createElement(
                     'div',

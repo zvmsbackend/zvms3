@@ -2,16 +2,16 @@ from functools import reduce
 from operator import or_
 
 from flask import (
-    Blueprint, 
-    redirect, 
+    Blueprint,
+    redirect,
     session
 )
 
 from .framework import (
-    login_required, 
-    permission, 
-    route, 
-    view, 
+    login_required,
+    permission,
+    route,
+    view,
     url
 )
 from .util import render_template, execute_sql
@@ -19,12 +19,14 @@ from .misc import Permission, permission2str
 
 Admin = Blueprint('Admin', __name__, url_prefix='/admin')
 
+
 @Admin.route('/')
 @login_required
 @permission(Permission.ADMIN)
 @view
 def index():
     return render_template('zvms/admin.html', permission2str=permission2str)
+
 
 @route(Admin, url.permission)
 @login_required
@@ -50,6 +52,7 @@ def alter_permission(userident: str, perm: list[int]):
         userid=userid
     )
     return redirect('/user/{}'.format(userid))
+
 
 @route(Admin, url.login)
 @login_required

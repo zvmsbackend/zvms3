@@ -1,21 +1,21 @@
 from flask import (
-    Blueprint, 
-    redirect, 
+    Blueprint,
+    redirect,
     abort,
-    request, 
+    request,
     session
 )
 
 from .util import (
-    execute_sql, 
-    render_template, 
-    get_user_scores, 
+    execute_sql,
+    render_template,
+    get_user_scores,
     render_markdown,
     md5
 )
 from .framework import (
     login_required,
-    route, 
+    route,
     view,
     url
 )
@@ -23,12 +23,14 @@ from .misc import Permission
 
 User = Blueprint('User', __name__, url_prefix='/user')
 
+
 @User.route('/login')
 @view
 def login_get():
     if 'userid' in session:
         return redirect('/user/{}'.format(session.get('userid')))
     return render_template('zvms/login.html')
+
 
 @route(User, url.login)
 @view
@@ -50,17 +52,20 @@ def login_post(userident: str, password: str):
     )))
     return redirect(request.args.get('redirect_to', '/user/{}'.format(user_info[0])))
 
+
 @User.route('/logout')
 @view
 def logout():
     session.clear()
     return redirect('/user/login')
 
+
 @User.route('/<int:id>')
 @login_required
 @view
 def user_info(id: int):
-    manager = int(session.get('permission')) & (Permission.MANAGER | Permission.ADMIN)
+    manager = int(session.get('permission')) & (
+        Permission.MANAGER | Permission.ADMIN)
     match execute_sql(
         'SELECT user.username, user.permission, user.classid, class.name '
         'FROM user '
@@ -88,7 +93,7 @@ def user_info(id: int):
         classid=session.get('classid')
     ).fetchall()
     return render_template(
-        'zvms/user.html', 
+        'zvms/user.html',
         userid=id,
         username=username,
         permission=str(Permission(permission)),
@@ -103,6 +108,7 @@ def user_info(id: int):
         manager=manager
     )
 
+
 @route(User, url.modify_password)
 @login_required
 @view
@@ -111,7 +117,7 @@ def modify_password(target: int, old: str, new: str):
     if target != int(session.get('userid')) and not manager:
         return render_template('zvms/error.html', msg='权限不足')
     match execute_sql(
-        'SELECT permission FROM user WHERE userid = :userid', 
+        'SELECT permission FROM user WHERE userid = :userid',
         userid=target
     ).fetchone():
         case None:
@@ -133,6 +139,7 @@ def modify_password(target: int, old: str, new: str):
     )
     return render_template('zvms/success.html', msg='修改密码成功')
 
+
 @User.route('/class/list')
 @login_required
 @view
@@ -141,6 +148,7 @@ def class_list():
         'zvms/class_list.html',
         classes=execute_sql('SELECT id, name FROM class').fetchall()
     )
+
 
 @User.route('/class/<int:id>')
 @login_required

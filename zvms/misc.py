@@ -13,6 +13,7 @@ db = SQLAlchemy()
 
 _empty = object()
 
+
 class Permission(IntFlag):
     CLASS = 1
     MANAGER = 2
@@ -27,14 +28,15 @@ class Permission(IntFlag):
                 ret.append(name)
                 self -= value
         return ', '.join(ret)
-    
-    def authorized(self, /, that = _empty, *, admin: bool = True) -> bool:
+
+    def authorized(self, /, that=_empty, *, admin: bool = True) -> bool:
         if that is _empty:
             that = int(session.get('permission'))
         if that is None:
             return False
         return bool(((self | Permission.ADMIN) if admin else self) & that)
-    
+
+
 permission2str = {
     Permission.CLASS: '班级',
     Permission.MANAGER: '管理员',
@@ -42,6 +44,7 @@ permission2str = {
     Permission.INSPECTOR: '督察员',
     Permission.ADMIN: 'Administrator'
 }
+
 
 class VolStatus(IntEnum):
     UNAUDITED = 1
@@ -51,9 +54,10 @@ class VolStatus(IntEnum):
 
     def __str__(self) -> str:
         return ('未过审', '已通过', '不可报名', '特殊义工')[self - 1]
-    
+
     def badge(self) -> str:
         return ('dark', 'success', 'danger', 'primary')[self - 1]
+
 
 class VolType(IntEnum):
     INSIDE = 1
@@ -62,7 +66,8 @@ class VolType(IntEnum):
 
     def __str__(self) -> str:
         return ('校内义工', '校外义工', '社会实践')[self - 1]
-    
+
+
 class ThoughtStatus(IntEnum):
     WAITING_FOR_SIGNUP_AUDIT = 1
     DRAFT = 2
@@ -82,6 +87,6 @@ class ThoughtStatus(IntEnum):
             '拒绝',
             '打回'
         )[self - 1]
-    
+
     def badge(self) -> str:
         return ('dark', 'secondary', 'info', 'primary', 'success', 'danger', 'warning')[self - 1]

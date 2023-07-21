@@ -18,15 +18,16 @@
         <div id="pictures" class="carousel slide" data-bs-ride="carousel">
             <div class="carousel-indicators">
                 {% for i, _ in pictures %}
-                <button type="button" data-bs-target="#pictures" data-bs-slide-to="{{i}}" class="{{'active' if i == 0 else ''}}" />
+                <button type="button" data-bs-target="#pictures" data-bs-slide-to="{{i}}"
+                    class="{{'active' if i == 0 else ''}}" />
                 {% endfor %}
             </div>
             <div class="carousel-inner">
-            {% for i, img in pictures %}
-            <div class="carousel-item{{' active' if i == 0 else ''}}">
-                <img src="/static/pictures/{{img}}" class="img-fluid">
-            </div>
-            {% endfor %}
+                {% for i, img in pictures %}
+                <div class="carousel-item{{' active' if i == 0 else ''}}">
+                    <img src="/static/pictures/{{img}}" class="img-fluid">
+                </div>
+                {% endfor %}
             </div>
             <button class="carousel-control-prev" type="button" data-bs-target="#pictures" data-bs-slide="prev">
                 <span class="carousel-control-prev-icon"></span>
@@ -50,7 +51,8 @@
         <button class="btn btn-primary" type="submit">初审通过感想</button>
     </form>
     {% endif %}
-    {% if (Permission.AUDITOR.authorized(_permission) and type == 2 or Permission.MANAGER.authorized() and type == 1) and status == 4 %}
+    {% if (Permission.AUDITOR.authorized(_permission) and type == 2 or Permission.MANAGER.authorized() and type == 1)
+    and status == 4 %}
     <form action="/thought/{{volid}}/{{userid}}/audit/final/accept" method="POST">
         <div class="input-group">
             <input class="form-control" type="number" name="reward" placeholder="获得的义工时间" value="{{expected_reward}}">

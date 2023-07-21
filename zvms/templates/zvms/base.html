@@ -10,31 +10,40 @@
         {% if _login %}
         <li class="mb-1">
             <a class="link-body-emphasis text-decoration-none rounded" href="/user/{{_userid}}">
-                <svg class="bi pe-none me-2" width="16" height="16"><use href="#home-icon"></use></svg>
+                <svg class="bi pe-none me-2" width="16" height="16">
+                    <use href="#home-icon"></use>
+                </svg>
                 主页
             </a>
         </li>
         <li class="mb-1">
             <a class="link-body-emphasis text-decoration-none rounded" href="/user/class/list">
-                <svg class="bi pe-none me-2" width="16" height="16"><use href="#class-icon"></use></svg>
+                <svg class="bi pe-none me-2" width="16" height="16">
+                    <use href="#class-icon"></use>
+                </svg>
                 班级列表
             </a>
         </li>
         <li class="mb-1">
-            <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#view-volunteers-collapse" aria-expanded="false">
+            <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
+                data-bs-toggle="collapse" data-bs-target="#view-volunteers-collapse" aria-expanded="false">
                 查看义工
             </button>
             <div class="collapse" id="view-volunteers-collapse">
                 <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                     <li>
                         <a href="/volunteer/list" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16"><use href="#list-icon"></use></svg>
+                            <svg class="bi pe-none me-2" width="16" height="16">
+                                <use href="#list-icon"></use>
+                            </svg>
                             义工列表
                         </a>
                     </li>
                     <li>
                         <a href="/volunteer/me" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16"><use href="#checked-icon"></use></svg>
+                            <svg class="bi pe-none me-2" width="16" height="16">
+                                <use href="#checked-icon"></use>
+                            </svg>
                             我的义工
                         </a>
                     </li>
@@ -42,7 +51,8 @@
             </div>
         </li>
         <li class="mb-1">
-            <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#create-volunteer-collapse" aria-expanded="false">
+            <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
+                data-bs-toggle="collapse" data-bs-target="#create-volunteer-collapse" aria-expanded="false">
                 创建义工
             </button>
             <div class="collapse" id="create-volunteer-collapse">
@@ -50,21 +60,27 @@
                     {% if Permission.MANAGER.authorized(_permission) %}
                     <li>
                         <a href="/volunteer/create" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16"><use href="#add-icon"></use></svg>
+                            <svg class="bi pe-none me-2" width="16" height="16">
+                                <use href="#add-icon"></use>
+                            </svg>
                             校内义工
                         </a>
                     </li>
                     {% endif %}
                     <li>
                         <a href="/volunteer/create/appointed" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16"><use href="#checked-add-icon"></use></svg>
+                            <svg class="bi pe-none me-2" width="16" height="16">
+                                <use href="#checked-add-icon"></use>
+                            </svg>
                             指定义工
                         </a>
                     </li>
                     {% if Permission.MANAGER.authorized(_permission) %}
                     <li>
                         <a href="/volunteer/create/special" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16"><use href="#excl-add-icon"></use></svg>
+                            <svg class="bi pe-none me-2" width="16" height="16">
+                                <use href="#excl-add-icon"></use>
+                            </svg>
                             特殊义工
                         </a>
                     </li>
@@ -73,27 +89,34 @@
             </div>
         </li>
         <li class="mb-1">
-            <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#thought-collapse" aria-expanded="false">
+            <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
+                data-bs-toggle="collapse" data-bs-target="#thought-collapse" aria-expanded="false">
                 感想
             </button>
             <div class="collapse" id="thought-collapse">
                 <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                     <li>
                         <a href="/thought/me" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16"><use href="#checked-icon"></use></svg>
+                            <svg class="bi pe-none me-2" width="16" height="16">
+                                <use href="#checked-icon"></use>
+                            </svg>
                             我的感想
                         </a>
                     </li>
                     {% if Permission.AUDITOR.__or__(Permission.MANAGER).authorized(_permission) %}
                     <li>
                         <a href="/thought/list" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16"><use href="#list-icon"></use></svg>
+                            <svg class="bi pe-none me-2" width="16" height="16">
+                                <use href="#list-icon"></use>
+                            </svg>
                             感想列表
                         </a>
                     </li>
                     <li>
                         <a href="/thought/unaudited" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16"><use href="#x-icon"></use></svg>
+                            <svg class="bi pe-none me-2" width="16" height="16">
+                                <use href="#x-icon"></use>
+                            </svg>
                             未审核感想
                         </a>
                     </li>
@@ -104,14 +127,17 @@
         {% endif %}
         <li class="mb-1">
             <a class="link-body-emphasis text-decoration-none rounded" href="/about">
-                <svg class="bi pe-none me-2" width="16" height="16"><use href="#github-icon"></use></svg>
+                <svg class="bi pe-none me-2" width="16" height="16">
+                    <use href="#github-icon"></use>
+                </svg>
                 关于
             </a>
         </li>
         <li class="border-top my-3"></li>
         {% if _login %}
         <li class="mb-1">
-            <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed" data-bs-toggle="collapse" data-bs-target="#account-collapse" aria-expanded="false">
+            <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
+                data-bs-toggle="collapse" data-bs-target="#account-collapse" aria-expanded="false">
                 账户
             </button>
             <div class="collapse" id="account-collapse">
@@ -119,7 +145,9 @@
                     {% if Permission.MANAGER.authorized(_permission) %}
                     <li>
                         <a href="/management" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16"><use href="#management-icon"></use></svg>
+                            <svg class="bi pe-none me-2" width="16" height="16">
+                                <use href="#management-icon"></use>
+                            </svg>
                             后台管理
                         </a>
                     </li>
@@ -127,14 +155,18 @@
                     {% if Permission.ADMIN.authorized(_permission) %}
                     <li>
                         <a href="/admin" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16"><use href="#admin-icon"></use></svg>
+                            <svg class="bi pe-none me-2" width="16" height="16">
+                                <use href="#admin-icon"></use>
+                            </svg>
                             系统管理
                         </a>
                     </li>
                     {% endif %}
                     <li>
                         <a href="/user/logout" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16"><use href="#escape-icon"></use></svg>
+                            <svg class="bi pe-none me-2" width="16" height="16">
+                                <use href="#escape-icon"></use>
+                            </svg>
                             登出
                         </a>
                     </li>

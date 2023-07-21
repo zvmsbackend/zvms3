@@ -4,44 +4,45 @@ from typing import Literal
 from datetime import date
 
 from flask import (
-    Blueprint, 
+    Blueprint,
     redirect,
-    abort, 
-    session 
+    abort,
+    session
 )
 
 from .framework import (
     ZvmsError,
     requiredlist,
-    lengthedstr, 
-    route, 
-    permission, 
-    login_required, 
-    view, 
+    lengthedstr,
+    route,
+    permission,
+    login_required,
+    view,
     url
 )
 from .util import (
-    execute_sql, 
-    render_template, 
+    execute_sql,
+    render_template,
     render_markdown,
-    get_primary_key, 
+    get_primary_key,
     username2userid,
     send_notice_to
 )
 from .misc import (
     ThoughtStatus,
-    Permission, 
-    VolStatus, 
+    Permission,
+    VolStatus,
     VolType
 )
 
 Volunteer = Blueprint('Volunteer', __name__, url_prefix='/volunteer')
 
+
 def select_volunteers(where_clause: str, args: dict, page: int, base_url: str) -> str:
     total = execute_sql(
         'SELECT COUNT(*) '
         'FROM volunteer AS vol '
-        'JOIN user ON user.userid = vol.holder {}'.format(where_clause), 
+        'JOIN user ON user.userid = vol.holder {}'.format(where_clause),
         **args
     ).fetchone()[0]
     vol_info = execute_sql(
@@ -76,6 +77,7 @@ def select_volunteers(where_clause: str, args: dict, page: int, base_url: str) -
         total=total
     )
 
+
 def can_signup(volid: int):
     return execute_sql(
         'SELECT vol.time >= DATE("NOW") '
@@ -92,6 +94,7 @@ def can_signup(volid: int):
         classid=session.get('classid')
     ).fetchone()[0]
 
+
 @route(Volunteer, url.search, 'GET')
 @login_required
 @view
@@ -105,11 +108,13 @@ def search_volunteers(name: str, page: int = 0):
         '/volunteer/search?name={}&'.format(quote(name))
     )
 
+
 @route(Volunteer, url.list, 'GET')
 @login_required
 @view
 def list_volunteers(page: int = 0):
     return select_volunteers('', {}, page, '/volunteer/list')
+
 
 @route(Volunteer, url.me, 'GET')
 @login_required
@@ -137,6 +142,7 @@ def my_volunteers(page: int = 0):
         '/volunteer/me'
     )
 
+
 @Volunteer.route('/<int:id>')
 @login_required
 @view
@@ -159,7 +165,8 @@ def volunteer_info(id: int):
         'WHERE uv.volid = :volid AND uv.status != 1 ',
         volid=id,
         userid=session.get('userid'),
-        can_view_thoughts=(Permission.MANAGER | Permission.AUDITOR).authorized(),
+        can_view_thoughts=(Permission.MANAGER |
+                           Permission.AUDITOR).authorized(),
         can_view_class_thoughts=Permission.CLASS.authorized(),
         classid=session.get('classid')
     ).fetchall()
@@ -187,12 +194,14 @@ def volunteer_info(id: int):
         signups=signups
     )
 
+
 @Volunteer.route('/create')
 @login_required
 @permission(Permission.MANAGER)
 @view
 def create_volunteer_get():
     return render_template('zvms/volunteer/create.html')
+
 
 def volunteer_helper_pre(classes: list[int], classes_max: list[int]) -> None:
     if len(classes) != len(classes_max):
@@ -206,6 +215,7 @@ def volunteer_helper_pre(classes: list[int], classes_max: list[int]) -> None:
         ).fetchone()[0] < max:
             raise ZvmsError('班级{}的人数溢出'.format(classid))
 
+
 def volunteer_helper_post(id: int, classes: list[int], classes_max: list[int]) -> None:
     for classid, max in zip(classes, classes_max):
         execute_sql(
@@ -216,15 +226,16 @@ def volunteer_helper_post(id: int, classes: list[int], classes_max: list[int]) -
             max=max
         )
 
+
 @route(Volunteer, url.create)
 @login_required
 @permission(Permission.MANAGER)
 @view
 def create_volunteer(
-    name: lengthedstr[32], 
+    name: lengthedstr[32],
     description: str,
-    time: date, 
-    reward: int, 
+    time: date,
+    reward: int,
     classes: requiredlist[int],
     classes_max: requiredlist[int]
 ):
@@ -235,7 +246,8 @@ def create_volunteer(
         name=name,
         description=description,
         type=VolType.INSIDE,
-        status=VolStatus.ACCEPTED if (Permission.CLASS | Permission.MANAGER).authorized() else VolStatus.UNAUDITED,
+        status=VolStatus.ACCEPTED if (
+            Permission.CLASS | Permission.MANAGER).authorized() else VolStatus.UNAUDITED,
         holder=session.get('userid'),
         reward=reward,
         time=time
@@ -256,11 +268,13 @@ def create_volunteer(
         )
     return redirect('/volunteer/{}'.format(volid))
 
+
 @Volunteer.route('/create/appointed')
 @login_required
 @view
 def create_appointed_volunteer_get():
     return render_template('zvms/volunteer/create_appointed.html')
+
 
 @route(Volunteer, url.create.appointed)
 @login_required
@@ -318,6 +332,7 @@ def create_appointed_volunteer(
                 )
     return redirect('/volunteer/{}'.format(volid))
 
+
 @route(Volunteer, url['id'].audit)
 @login_required
 @permission(Permission.CLASS)
@@ -331,7 +346,7 @@ def audit_volunteer(id: int, status: Literal[VolStatus.ACCEPTED, VolStatus.REJEC
             abort(404)
         case [*_, status] if status != VolStatus.UNAUDITED:
             return render_template('zvms/error.html', msg='该义工不可审核')
-        case [name, holder, _]: ... 
+        case [name, holder, _]: ...
     execute_sql(
         'UPDATE volunteer SET status = :status WHERE id = :id',
         id=id,
@@ -368,12 +383,14 @@ def audit_volunteer(id: int, status: Literal[VolStatus.ACCEPTED, VolStatus.REJEC
             )
     return redirect('/volunteer/{}'.format(id))
 
+
 @Volunteer.route('/create/special')
 @login_required
 @permission(Permission.MANAGER)
 @view
 def create_special_volunteer_get():
     return render_template('zvms/volunteer/create_special.html')
+
 
 def special_volunteer_helper_pre(rewards: list[str], participants: list[str]) -> None:
     if len(rewards) != len(participants):
@@ -384,7 +401,8 @@ def special_volunteer_helper_pre(rewards: list[str], participants: list[str]) ->
         rewards[:] = [int(reward)] * len(rewards)
     else:
         raise ZvmsError('表单校验错误')
-    
+
+
 def special_volunteer_helper_post(id: int, rewards: list[int], userids: list[int]) -> None:
     for userid, reward in zip(userids, rewards):
         execute_sql(
@@ -395,6 +413,7 @@ def special_volunteer_helper_post(id: int, rewards: list[int], userids: list[int
             status=ThoughtStatus.ACCEPTED,
             reward=reward
         )
+
 
 @route(Volunteer, url.create.special)
 @login_required
@@ -431,6 +450,7 @@ def create_special_volunteer(
         )
     return redirect('/volunteer/{}'.format(volid))
 
+
 @Volunteer.route('/<int:id>/signup', methods=['POST'])
 @login_required
 @view
@@ -449,6 +469,7 @@ def signup_volunteer(id: int):
     )
     return redirect('/volunteer/{}'.format(id))
 
+
 def test_signup(userid: int, volid: int):
     match execute_sql(
         'SELECT COUNT(*) FROM user_vol WHERE userid = :userid AND volid = :volid',
@@ -457,6 +478,7 @@ def test_signup(userid: int, volid: int):
     ).fetchone():
         case [0]:
             raise ZvmsError('报名不存在')
+
 
 @route(Volunteer, url['id'].signup.rollback)
 @login_required
@@ -471,6 +493,7 @@ def rollback_volunteer_signup(id: int, userid: int):
         volid=id
     )
     return redirect('/volunteer/{}'.format(id))
+
 
 @route(Volunteer, url['id'].signup.accept)
 @login_required
@@ -498,6 +521,7 @@ def accept_volunteer_signup(id: int, userid: int):
     )
     return redirect('/volunteer/{}'.format(id))
 
+
 @Volunteer.route('/<int:id>/delete', methods=['POST'])
 @login_required
 @view
@@ -511,11 +535,12 @@ def delete_volunteer(id: int):
         case [holder]: ...
     if holder != int(session.get('userid')) and not Permission.MANAGER.authorized():
         return render_template('zvms/error.html', msg='不能删除他人的义工')
-    execute_sql('DELETE FROM class_vol WHERE volid = :volid',volid=id)
-    execute_sql('DELETE FROM user_vol WHERE volid = :volid',volid=id)
-    execute_sql('DELETE FROM picrture WHERE volid = :volid',volid=id)
-    execute_sql('DELETE FROM volunteer WHERE id = :id',id=id)
+    execute_sql('DELETE FROM class_vol WHERE volid = :volid', volid=id)
+    execute_sql('DELETE FROM user_vol WHERE volid = :volid', volid=id)
+    execute_sql('DELETE FROM picrture WHERE volid = :volid', volid=id)
+    execute_sql('DELETE FROM volunteer WHERE id = :id', id=id)
     return redirect('/volunteer/list')
+
 
 @Volunteer.route('/<int:id>/modify')
 @login_required
@@ -578,6 +603,7 @@ def modify_volunteer_get(id: int):
         participants=list(map(itemgetter(0), participants))
     )
 
+
 def test_self(id: int) -> None:
     match execute_sql(
         'SELECT status, holder FROM volunteer WHERE id = :id',
@@ -591,7 +617,8 @@ def test_self(id: int) -> None:
             if status == VolStatus.REJECTED:
                 raise ZvmsError('不能修改被拒绝的义工')
             return status
-    
+
+
 @route(Volunteer, url['id'].modify.special)
 @login_required
 @permission(Permission.MANAGER)
@@ -621,6 +648,7 @@ def modify_volunteer_special(
     )
     special_volunteer_helper_post(id, rewards, userids)
     return redirect('/volunteer/{}'.format(id))
+
 
 @route(Volunteer, url['id'].modify)
 @login_required
@@ -654,6 +682,7 @@ def modify_volunteer(
     )
     volunteer_helper_post(id, classes, classes_max)
     return redirect('/volunteer/{}'.format(id))
+
 
 @route(Volunteer, url['id'].modify.appointed)
 @login_required

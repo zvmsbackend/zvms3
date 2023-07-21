@@ -10,12 +10,12 @@
         <p>
             {% if can_signup %}
             可报名
-            <form action="/volunteer/{{id}}/signup" method="POST">
-                <button class="btn btn-primary" type="submit">报名</button>
-            </form>
-            {% else %}
-            不可报名
-            {% endif %}
+        <form action="/volunteer/{{id}}/signup" method="POST">
+            <button class="btn btn-primary" type="submit">报名</button>
+        </form>
+        {% else %}
+        不可报名
+        {% endif %}
         </p>
     </div>
     <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
@@ -39,22 +39,22 @@
         </button>
         <div class="modal fade" id="delete-modal" tabindex="-1" aria-labelledby="delete-modal-label" aria-hidden="true">
             <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                <h1 class="modal-title fs-5" id="delete-modal-label">确认删除</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>真的要删除义工吗?</p>
-                    <p>删除后, 报名和感想也将被移除, 且<em>不可</em>恢复</p>
-                </div>
-                <form action="/volunteer/{{id}}/delete" method="POST">
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-                        <button type="submit" class="btn btn-danger">确认</button>
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="delete-modal-label">确认删除</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                </form>
-            </div>
+                    <div class="modal-body">
+                        <p>真的要删除义工吗?</p>
+                        <p>删除后, 报名和感想也将被移除, 且<em>不可</em>恢复</p>
+                    </div>
+                    <form action="/volunteer/{{id}}/delete" method="POST">
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                            <button type="submit" class="btn btn-danger">确认</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
         {% endif %}
@@ -65,7 +65,7 @@
         <li class="list-group-item">
             <a href="/user/{{participantid}}">{{participantname}}</a>
             {% if thought_visible %}
-            &nbsp;<a href="/thought/{{id}}/{{participantid}}">查看感想</a> 
+            &nbsp;<a href="/thought/{{id}}/{{participantid}}">查看感想</a>
             {% endif %}
             {% if participantid == _userid or Permission.CLASS.authorized(_permission) %}
             <form action="/volunteer/{{id}}/signup/rollback" method="POST">

@@ -4,36 +4,37 @@ import os.path
 
 from werkzeug.datastructures import FileStorage
 from flask import (
-    Blueprint, 
-    send_file, 
-    redirect, 
-    abort, 
+    Blueprint,
+    send_file,
+    redirect,
+    abort,
     session
 )
 
 from .util import (
     ZvmsError,
-    execute_sql, 
-    render_template, 
-    render_markdown, 
+    execute_sql,
+    render_template,
+    render_markdown,
     get_user_scores,
     send_notice_to,
     md5
 )
 from .framework import (
-    login_required, 
-    permission, 
-    route, 
-    view, 
+    login_required,
+    permission,
+    route,
+    view,
     url
 )
 from .misc import (
-    ThoughtStatus, 
-    Permission, 
+    ThoughtStatus,
+    Permission,
     VolType
 )
 
 Thought = Blueprint('Thought', __name__, url_prefix='/thought')
+
 
 @Thought.route('/csv')
 @login_required
@@ -55,6 +56,7 @@ def data_csv():
         if (d := get_user_scores(id)) or True
     )
     return send_file(io.BytesIO(file.getvalue().encode()), download_name='data.csv')
+
 
 def select_thoughts(where_clause: str, args: dict, page: str, base_url: str):
     total = execute_sql(
@@ -90,12 +92,14 @@ def select_thoughts(where_clause: str, args: dict, page: str, base_url: str):
         total=total
     )
 
+
 @route(Thought, url.list, 'GET')
 @login_required
 @permission(Permission.MANAGER | Permission.AUDITOR)
 @view
 def list_thoughts(page: int = 0):
     return select_thoughts('TRUE', {}, page, '/thought/list')
+
 
 @route(Thought, url.me, 'GET')
 @login_required
@@ -110,6 +114,7 @@ def my_thoughts(page: int = 0):
         '/thought/me'
     )
 
+
 @route(Thought, url.unaudited, 'GET')
 @login_required
 @permission(Permission.AUDITOR | Permission.MANAGER)
@@ -123,6 +128,7 @@ def unaudited_thoughts(page: int = 0):
         page,
         '/thought/unaudited'
     )
+
 
 @Thought.route('/<int:volid>/<int:userid>')
 @login_required
@@ -167,6 +173,7 @@ def thought_info(volid: int, userid: int):
         expected_reward=expected_reward,
         pictures=list(enumerate(pictures))
     )
+
 
 @Thought.route('/<int:volid>/<int:userid>/edit')
 @login_required
@@ -222,6 +229,7 @@ def edit_thought_get(volid: int, userid: int):
         pictures=enumerate(pictures)
     )
 
+
 @route(Thought, url['volid']['userid'].edit)
 @login_required
 @view
@@ -242,7 +250,7 @@ def edit_thought(volid: int, userid: int, thought: str, pictures: list[str], fil
             return render_template('zvms/error.html', msg='不能编辑该感想')
     execute_sql(
         'DELETE FROM picture WHERE volid = :volid AND userid = :userid',
-        volid=volid, 
+        volid=volid,
         userid=userid
     )
     for filename in pictures:
@@ -308,6 +316,7 @@ def edit_thought(volid: int, userid: int, thought: str, pictures: list[str], fil
         )
     return redirect('/thought/{}/{}'.format(volid, userid))
 
+
 @route(Thought, url['volid']['userid'].audit.first)
 @login_required
 @permission(Permission.CLASS)
@@ -338,6 +347,7 @@ def first_audit(volid: int, userid: int):
     )
     return redirect('/thought/{}/{}'.format(volid, userid))
 
+
 def test_final(volid: int, userid: int):
     match execute_sql(
         'SELECT uv.status, vol.type '
@@ -354,6 +364,7 @@ def test_final(volid: int, userid: int):
         case _:
             raise ZvmsError('不能终审该感想')
 
+
 @route(Thought, url['volid']['userid'].audit.final.accept)
 @login_required
 @permission(Permission.AUDITOR | Permission.MANAGER)
@@ -364,7 +375,7 @@ def accept_thought(volid: int, userid: int, reward: int):
         'UPDATE user_vol '
         'SET status = 5, reward = :reward '
         'WHERE userid = :userid AND volid = :volid',
-        userid=userid, 
+        userid=userid,
         volid=volid,
         reward=reward
     )
@@ -377,14 +388,16 @@ def accept_thought(volid: int, userid: int, reward: int):
         )
     )
     return redirect('/thought/{}/{}'.format(volid, userid))
-        
+
 # 为什么要叫foo这个名字呢?
 # 我也不知道
+
+
 def foo(status: ThoughtStatus, volid: int, userid: int, notice_content: str) -> str:
     test_final(volid, userid)
     execute_sql(
         'UPDATE user_vol SET status = :status WHERE userid = :userid AND volid = :volid',
-        userid=userid, 
+        userid=userid,
         volid=volid,
         status=status
     )
@@ -399,6 +412,7 @@ def foo(status: ThoughtStatus, volid: int, userid: int, notice_content: str) -> 
     )
     return redirect('/thought/{}/{}'.format(volid, userid))
 
+
 @route(Thought, url['volid']['userid'].audit.final.reject)
 @login_required
 @permission(Permission.AUDITOR)
@@ -406,10 +420,11 @@ def foo(status: ThoughtStatus, volid: int, userid: int, notice_content: str) -> 
 def reject_thought(volid: int, userid: int):
     foo(ThoughtStatus.REJECTED, volid, userid, '被拒绝, 不可重新提交')
 
+
 @route(Thought, url['volid']['userid'].audit.final.pitchback)
 @login_required
 @permission(Permission.AUDITOR)
 @view
 def pitchback_thought(volid: int, userid: int):
-    
+
     return foo(ThoughtStatus.PITCHBACK, volid, userid, '被打回, 可以重新提交')

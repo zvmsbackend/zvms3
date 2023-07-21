@@ -20,17 +20,20 @@ Dict = Blueprint('Dict', __name__, url_prefix='/dict')
 
 _no_word = object()
 
+
 def bing_dict_helper(soup: bs4.BeautifulSoup, div_id: str) -> map:
     div = soup.find('div', id=div_id)
     if div is None:
         return ()
     return map(Tag.get_text, div.find_all('tr', class_='def_row'))
 
+
 def zh_dict_helper(soup: bs4.BeautifulSoup, cls: str, tagname: str) -> map:
-    tag = soup.find('div', class_=cls)
-    if tag is None:
+    div = soup.find('div', class_=cls)
+    if div is None:
         return ()
-    return map(Tag.get_text, tag.find_all(tagname))
+    return map(Tag.get_text, div.find_all(tagname))
+
 
 @route(Dict, url['kind', 'str'], 'GET', 'toolkit/error.html')
 @toolkit_view
@@ -58,7 +61,7 @@ def bing_dictionary_get(
         pronunciation = soup.find('div', {'class': 'hd_p1_1'}).get_text()
         return render_template(
             'toolkit/dict/result.html',
-            body=pronunciation,
+            text=pronunciation,
             word=word,
             data=list(enumerate(
                 (title, id, bing_dict_helper(soup, id))
@@ -88,9 +91,9 @@ def bing_dictionary_get(
             data=list(enumerate(
                 (title, cls, zh_dict_helper(soup, cls, tagname))
                 for title, cls, tagname in (
-                    ('基本解释', 'jbjs', 'li'), 
-                    ('详细解释', 'xxjs', 'p'), 
-                    ('康熙字典', 'kxzd', 'p'), 
+                    ('基本解释', 'jbjs', 'li'),
+                    ('详细解释', 'xxjs', 'p'),
+                    ('康熙字典', 'kxzd', 'p'),
                     ('说文解字', 'swjz', 'p')
                 )
             ))
@@ -103,7 +106,8 @@ def bing_dictionary_get(
             for title, cls in (('词语解释', 'jbjs'), ('网络解释', 'wljs'))
         ))
     )
-    
+
+
 @route(Dict, url.bing.examples, 'GET', 'toolkit/error.html')
 @toolkit_view
 def bing_examples(

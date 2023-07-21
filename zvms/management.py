@@ -1,29 +1,30 @@
 from datetime import date
 
 from flask import (
-    Blueprint, 
-    render_template, 
-    redirect, 
+    Blueprint,
+    render_template,
+    redirect,
     session
 )
 
 from .util import (
-    execute_sql, 
-    username2userid, 
-    get_primary_key, 
+    execute_sql,
+    username2userid,
+    get_primary_key,
     render_template,
-    three_days_after
+    three_days_later
 )
 from .framework import (
-    login_required, 
-    permission, 
-    route, 
-    view, 
+    login_required,
+    permission,
+    route,
+    view,
     url
 )
 from .misc import Permission
 
 Management = Blueprint('Management', __name__, url_prefix='/management')
+
 
 @Management.route('/')
 @login_required
@@ -37,18 +38,20 @@ def index():
             'FROM issue '
             'JOIN user ON issue.author = user.userid '
             'ORDER BY issue.id DESC'
-        ).fetchall()
+        ).fetchall(),
+        three_days_later=three_days_later().isoformat()
     )
+
 
 @route(Management, url.send_notice)
 @login_required
 @permission(Permission.MANAGER)
 @view
 def send_notice(
-    title: str, 
-    content: str, 
-    school: bool, 
-    anonymous: bool, 
+    title: str,
+    content: str,
+    school: bool,
+    anonymous: bool,
     targets: list[str],
     expire: date
 ):
@@ -84,6 +87,7 @@ def send_notice(
             )
     return redirect('/management')
 
+
 @Management.route('/edit-notices')
 @login_required
 @permission(Permission.MANAGER)
@@ -110,9 +114,9 @@ def edit_notices_get():
                 'WHERE noticeid = :noticeid',
                 noticeid=id
             ))) if not school else None) or True
-        ],
-        today=three_days_after().isoformat()
+        ]
     )
+
 
 @route(Management, url.edit_notices)
 @login_required
@@ -148,13 +152,16 @@ def edit_notices_post(noticeid: int, title: str, content: str, targets: list[str
     )
     return redirect('/management/edit-notices')
 
+
 @route(Management, url.delete_notice)
 @login_required
 @permission(Permission.MANAGER)
 @view
 def delete_notice(noticeid: int):
-    execute_sql('DELETE FROM user_notice WHERE noticeid = :noticeid', noticeid=noticeid)
-    execute_sql('DELETE FROM class_notice WHERE noticeid = :noticeid', noticeid=noticeid)
+    execute_sql('DELETE FROM user_notice WHERE noticeid = :noticeid',
+                noticeid=noticeid)
+    execute_sql(
+        'DELETE FROM class_notice WHERE noticeid = :noticeid', noticeid=noticeid)
     if execute_sql('SELECT id FROM notice WHERE id = :id', id=noticeid).fetchone() is None:
         return render_template('zvms/error.html', msg='通知不存在')
     execute_sql('DELETE FROM notice WHERE id = :id', id=noticeid)

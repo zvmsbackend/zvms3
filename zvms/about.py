@@ -1,15 +1,15 @@
 from datetime import date
 
 from flask import (
-    Blueprint, 
-    redirect, 
-    request, 
+    Blueprint,
+    redirect,
+    request,
     session
 )
 
 from .util import (
-    execute_sql, 
-    inexact_now, 
+    execute_sql,
+    inexact_now,
     render_template
 )
 from .framework import (
@@ -20,6 +20,7 @@ from .framework import (
 )
 
 About = Blueprint('About', __name__)
+
 
 @About.route('/about')
 @view
@@ -46,6 +47,7 @@ def index():
         issues_today=issues_today
     )
 
+
 @route(About, url.issue)
 @view
 def issue(content: lengthedstr[64]):
@@ -61,7 +63,7 @@ def issue(content: lengthedstr[64]):
     execute_sql(
         'INSERT INTO issue(author, content, time) '
         'VALUES(:author, :content, :time)',
-        author=session.get('userid'), 
+        author=session.get('userid'),
         content=content,
         time=inexact_now()
     )

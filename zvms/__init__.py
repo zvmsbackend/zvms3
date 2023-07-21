@@ -15,13 +15,16 @@ app.config.from_object(config)
 
 db.init_app(app)
 
+
 @app.route('/')
 def index():
     return redirect('/user/login')
 
+
 @app.route('/favicon.ico')
 def favicon():
     return send_file('favicon.ico')
+
 
 app.register_blueprint(User)
 app.register_blueprint(About)

@@ -4,12 +4,10 @@
 {% if profile %}
 <div class="card">
     <div class="card-body">
-        <div class="card-title">
-            {{profile[0]}}
-        </div>
-        <div class="card-text">
-            <p>你的生日是{{profile[1]}}年{{profile[2]}}月{{profile[3]}}日</p>
-        </div>
+        <h5 class="card-title">{{profile[0]}}</h5>
+        <p class="card-text">
+            你的生日是{{profile[1]}}年{{profile[2]}}月{{profile[3]}}日
+        </p>
     </div>
 </div>
 {% else %}
@@ -27,9 +25,7 @@
 {% endif %}
 <div class="card">
     <div class="card-body">
-        <div class="card-title">
-            今天的生日祝福
-        </div>
+        <h5 class="card-title">今天的生日祝福</h5>
     </div>
     <ul class="list-group">
         {% for userid, username in today %}
@@ -41,14 +37,13 @@
 </div>
 <div class="card">
     <div class="card-body">
-        <div class="card-title">
-            本月的生日祝福
-        </div>
-        <div class="card-text">
+        <h5 class="card-title">本月的生日祝福</h5>
+        <p class="card-text">
             {% for userid, username, day in thismonth %}
-            <span class="badge bg-{{random_color()}}"><a href="/user/{{userid}}">{{username}}</a>{{month}}-{{day}}</span>
+            <span class="badge bg-{{random_color()}}"><a
+                    href="/user/{{userid}}">{{username}}</a>{{month}}-{{day}}</span>
             {% endfor %}
-        </div>
+        </p>
     </div>
 </div>
 {% endblock %}

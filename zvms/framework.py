@@ -13,6 +13,7 @@ from werkzeug.exceptions import NotFound
 
 from .misc import db, logger, Permission
 
+
 class Validator(metaclass=ABCMeta):
     @abstractmethod
     def validate(self, /, arg: str | list[str]): ...
@@ -26,16 +27,19 @@ class Validator(metaclass=ABCMeta):
     method = ImmutableMultiDict.get
     accept_none = False
 
+
 class IntegerValidator(Validator):
     def validate(self, /, arg: str):
         if arg.isdecimal():
             return int(arg)
         return None
-    
+
     def errormsg(self) -> str:
         return '应为整数'
 
+
 integer = IntegerValidator()
+
 
 class DateValidator(Validator):
     def validate(self, /, arg: str):
@@ -46,11 +50,13 @@ class DateValidator(Validator):
             return d
         except ValueError:
             return None
-        
+
     def errormsg(self) -> str:
         return '应为日期'
 
+
 isodate = DateValidator()
+
 
 class LengthValidator(Validator):
     def __init__(self, /, max: int) -> None:
@@ -60,33 +66,39 @@ class LengthValidator(Validator):
         if len(arg) > self.max:
             return None
         return arg
-    
+
     def errormsg(self) -> str:
         return f'长度不应超过{self.max}'
-    
+
+
 class lengthedstr(str):
     def __class_getitem__(self, length: int) -> LengthValidator:
         return LengthValidator(length)
-    
+
+
 class BoolValidator(Validator):
     def validate(self, /, arg: str | list[str]):
         return bool(arg)
-    
+
     def errormsg(self) -> str:
         return '应为布尔值'
 
     accept_none = True
 
+
 boolean = BoolValidator()
-    
+
+
 class AnyValidator(Validator):
     def validate(cls, /, arg: str):
         return arg
-    
+
     def errormsg(self) -> str:
         return ''
-    
+
+
 any = AnyValidator()
+
 
 class ListValidator(Validator):
     def __init__(self, /, child_validator: Validator, required: bool) -> None:
@@ -105,18 +117,20 @@ class ListValidator(Validator):
         if len(ret) != len(set(ret)):
             return None
         return ret
-    
+
     def errormsg(self) -> str:
         return '应为列表'
-    
+
     def from_files(self) -> bool:
         return self.child_validator.from_files()
-    
+
     method = ImmutableMultiDict.getlist
+
 
 class requiredlist(list):
     def __class_getitem__(cls, /, child_validator: type) -> ListValidator:
         return ListValidator(annotation2validator(child_validator), True)
+
 
 class EnumValidator(Validator):
     def __init__(self, /, enum: EnumType) -> None:
@@ -129,10 +143,11 @@ class EnumValidator(Validator):
         if arg not in self.enum._value2member_map_:
             return None
         return self.enum(arg)
-    
+
     def errormsg(self) -> str:
         return '取值应为{}中的一个'.format(', '.join(map(str, self.enum._value2member_map_)))
-    
+
+
 class LiteralValidator(Validator):
     def __init__(self, /, choices) -> None:
         self.choices = choices
@@ -146,12 +161,14 @@ class LiteralValidator(Validator):
                 try:
                     if choice.__class__(numeric) == choice:
                         return choice
-                except (ValueError, TypeError): ...
+                except (ValueError, TypeError):
+                    ...
         return None
-    
+
     def errormsg(self) -> str:
         return '取值应为{}中的一个'.format(', '.join(map(str, self.choices)))
-    
+
+
 class DefaultValidator(Validator):
     def __init__(self, /, child_validator: Validator, default_value) -> None:
         self.child_validator = child_validator
@@ -161,26 +178,29 @@ class DefaultValidator(Validator):
         if arg is None:
             return self.default_value
         return self.child_validator.validate(arg)
-    
+
     def errormsg(self) -> str:
         return self.child_validator.errormsg()
-    
+
     def from_files(self) -> bool:
         return self.child_validator.from_files()
-    
+
     accept_none = True
+
 
 class FileValidator(Validator):
     def validate(self, /, arg: str | list[str]):
         return arg
-    
+
     def errormsg(self) -> str:
         return ''
 
     def from_files(self) -> bool:
         return True
-    
+
+
 file = FileValidator()
+
 
 class Url:
     def __init__(self, /, string: str = '', params: frozenset = frozenset()) -> None:
@@ -189,26 +209,30 @@ class Url:
 
     def __getattr__(self, /, attr: str) -> 'Url':
         return Url(self.string + '/' + attr.replace('_', '-'), self.params)
-    
+
     def __getitem__(self, /, index: str | tuple[str, Any]) -> 'Url':
         match index:
             case str():
                 string = '<int:{}>'.format(index)
-            case [index, 'str']: 
-                string ='<{}>'.format(index)
+            case [index, 'str']:
+                string = '<{}>'.format(index)
         return Url(
             '{}/{}'.format(self.string, string),
             self.params | frozenset([index])
         )
-    
-    def root(self = None) -> 'Url':
+
+    def root(self=None) -> 'Url':
         return Url('/')
-    
+
+
 url = Url()
 
-class ZvmsError(Exception): ...
 
-def annotation2validator(annotation: type | Validator, default = _empty) -> Validator:
+class ZvmsError(Exception):
+    ...
+
+
+def annotation2validator(annotation: type | Validator, default=_empty) -> Validator:
     if isinstance(annotation, Validator):
         ret = annotation
     else:
@@ -219,21 +243,22 @@ def annotation2validator(annotation: type | Validator, default = _empty) -> Vali
             int: integer,
             FileStorage: file
         }.get(
-            annotation, 
+            annotation,
             ((lambda: ListValidator(annotation2validator(annotation.__args__[0], _empty), False))
-            if isinstance(annotation, GenericAlias) else 
-            (lambda: LiteralValidator(annotation.__args__))
-            if isinstance(annotation, _LiteralGenericAlias)
-            else (lambda: any))()
+             if isinstance(annotation, GenericAlias) else
+             (lambda: LiteralValidator(annotation.__args__))
+             if isinstance(annotation, _LiteralGenericAlias)
+             else (lambda: any))()
         )
     if default is _empty:
         return ret
     return DefaultValidator(ret, default)
 
+
 def route(
-    blueprint: Blueprint, 
-    url: Url, 
-    method: str = 'POST', 
+    blueprint: Blueprint,
+    url: Url,
+    method: str = 'POST',
     error_template: str = 'zvms/error.html'
 ) -> Callable[[Callable], Callable]:
     def deco(fn: Callable) -> Callable:
@@ -242,6 +267,7 @@ def route(
             for name, param in signature(fn).parameters.items()
             if name not in url.params
         }
+
         @wraps(fn)
         def wrapper(*args, **kwargs):
             args_dict = request.form if method == 'POST' else request.args
@@ -272,12 +298,15 @@ def route(
         return wrapper
     return deco
 
+
 @overload
 def view(fn: Callable) -> Callable: ...
-    
+
+
 def view(error_template: str = 'zvms/error.html') -> Callable[[Callable], Callable]:
     if callable(error_template):
         return view()(error_template)
+
     def deco(fn: Callable) -> Callable:
         @wraps(fn)
         def wrapper(*args, **kwargs):
@@ -292,12 +321,13 @@ def view(error_template: str = 'zvms/error.html') -> Callable[[Callable], Callab
                 logger.exception(exn)
                 from .util import render_template
                 return render_template(
-                    error_template, 
+                    error_template,
                     msg=exn.args[0] if isinstance(exn, ZvmsError)
                     else '服务器遇到了{}错误'.format(exn.__class__.__qualname__)
                 )
         return wrapper
     return deco
+
 
 def login_required(fn: Callable) -> Callable:
     @wraps(fn)
@@ -306,6 +336,7 @@ def login_required(fn: Callable) -> Callable:
             return redirect('/user/login?redirect_to=' + quote(request.url))
         return fn(*args, **kwargs)
     return wrapper
+
 
 def permission(perm: Permission) -> Callable[[Callable], Callable]:
     def deco(fn: Callable) -> Callable:
@@ -316,5 +347,6 @@ def permission(perm: Permission) -> Callable[[Callable], Callable]:
             abort(403)
         return wrapper
     return deco
+
 
 toolkit_view = view('toolkit/error.html')

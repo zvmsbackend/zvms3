@@ -2,23 +2,24 @@
 {% block container %}
 <div class="card">
     <div class="card-body">
-        <div class="card-title">{{word}}</div>
-        {% if body %}
-        <div class="card-text">
-            {{body}}
-        </div>
+        <h5 class="card-title">{{word}}</h5>
+        {% if text %}
+        <p class="card-text">{{text}}</p>
         {% endif %}
     </div>
     <ul class="nav nav-tabs" role="tablist">
         {% for i, (title, id, _) in data %}
         <li class="nav-item" role="presentation">
-            <button class="nav-link{{' active' if i == 0 else ''}}" data-bs-toggle="tab" data-bs-target="#{{id}}-pane" type="button" role="tab" aria-controls="{{id}}" aria-selected="{{'true' if i == 0 else 'false'}}">{{title}}</button>
+            <button class="nav-link{{' active' if i == 0 else ''}}" data-bs-toggle="tab" data-bs-target="#{{id}}-pane"
+                type="button" role="tab" aria-controls="{{id}}"
+                aria-selected="{{'true' if i == 0 else 'false'}}">{{title}}</button>
         </li>
         {% endfor %}
     </ul>
     <div class="tab-content">
         {% for i, (title, id, list) in data %}
-        <div class="tab-pane fade{{' show active' if i == 0 else ''}}" id="{{id}}-pane" role="tabpanel" aria-labelledby="{{id}}" tabindex="0">
+        <div class="tab-pane fade{{' show active' if i == 0 else ''}}" id="{{id}}-pane" role="tabpanel"
+            aria-labelledby="{{id}}" tabindex="0">
             <ul class="list-group">
                 {% for row in list %}
                 <li class="list-group-item">{{row}}</li>

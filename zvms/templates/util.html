@@ -5,7 +5,8 @@
             <ul class="pagination">
                 <li class="page-item"><a class="page-link" href="{{base_url}}?page=0">首页</a></li>
                 {% for i in pages %}
-                <li class="page-item{{' active' if i == page else ''}}"><a class="page-link" href="{{base_url}}?page={{i}}">{{i + 1}}</a></li>
+                <li class="page-item{{' active' if i == page else ''}}"><a class="page-link"
+                        href="{{base_url}}?page={{i}}">{{i + 1}}</a></li>
                 {% endfor %}
                 <li class="page-item"><a class="page-link" href="{{base_url}}?page={{(total - 1) // 10}}">尾页</a></li>
                 <li class="page-item disabled"><a class="page-link">共{{(total - 1) // 10}}页, {{total}}项</a></li>

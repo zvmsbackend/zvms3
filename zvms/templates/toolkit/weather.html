@@ -1,0 +1,181 @@
+{% extends "toolkit/base.html" %}
+{% block container %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js"
+    integrity="sha384-gdQErvCNWvHQZj6XZM0dNsAoY4v+j5P1XDpNkcM3HJG1Yx04ecqIHk7+4VBOCHOG"
+    crossorigin="anonymous"></script>
+<h1>{{location}}的天气</h1>
+<div class="card">
+    <h5 class="card-title">当前天气</h5>
+    <table class="table">
+        <tbody>
+            {% for name, attr in (
+            ('气温', 'currentTemperature'),
+            ('体感温度', 'feels'),
+            ('湿度', 'humidity'),
+            ('气压', 'baro'),
+            ('风向', 'windDesc'),
+            ('风速', 'windSpeed'),
+            ('可见度', 'visiblity'),
+            ('AQI', 'aqi'),
+            ('空气质量', 'aqiSeverity'),
+            ('污染物', 'primaryPollutant')
+            ) %}
+            <tr>
+                <th scope="row">{{name}}</th>
+                <td>{{currentCondition[attr]}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="card">
+    <nav id="navbar" class="navbar bg-body-tertiary px-3 mb-3">
+        <a class="navbar-brand" href="#">天气预报</a>
+        <ul class="nav nav-pills">
+            {% for i in forecast %}
+            <li class="nav-item">
+                <a class="nav-link" href="#{{i.id}}">{{i.dayTextLocaleString}}</a>
+            </li>
+            {% endfor %}
+        </ul>
+    </nav>
+    <div data-bs-spy="scroll" data-bs-target="#navbar" data-bs-root-margin="0px 0px -40%" data-bs-smooth-scroll="true"
+        class="scrollspy-example bg-body-tertiary p-3 rounded-2" tabindex="0" style="height: 90vh; overflow: auto;">
+        {% for i in forecast %}
+        <h4 id="{{i.id}}">{{i.dayTextLocaleString}}</h4>
+        <table class="table">
+            <tbody>
+                {% for name, attr in (
+                ('最高温度', 'highTemperature'),
+                ('最低温度', 'lowTemperature'),
+                ('最高湿度', 'humidityHi'),
+                ('最低湿度', 'humidityLow'),
+                ('降雨量', 'rainAmount')
+                ) %}
+                <tr>
+                    <th scope="row">{{name}}</th>
+                    <td>{{i[attr]}}</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <th scope="row">风速</th>
+                    <td>{{i.windSpeed}}{{i.windSpeedUnit}}</td>
+                </tr>
+                {% for name, attr in (('日出时间', 'sunrise'), ('日落时间', 'sunset')) %}
+                <tr>
+                    <th scope="row">{{name}}</th>
+                    <td>{{datetime.fromisoformat(i.almanac[attr])}}</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <th scope="row">月相</th>
+                    <td>{{i.almanac.moonPhase}}</td>
+                </tr>
+                {% for time, data in zip(('白天', '夜间'), i.dayNightSummaries.dataValues) %}
+                <tr>
+                    <th scope="row">{{time}}</th>
+                    <td>{{' '.join(data[1])}}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if i.hourly %}
+        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#hourly-{{i.id}}"
+            aria-expanded="false" aria-controls="hourly-{{i.id}}">
+            小时预报
+        </button>
+        <div class="collapse" id="hourly-{{i.id}}">
+            <div class="card card-body">
+                <div class="d-flex align-items-start">
+                    <div class="nav flex-column nav-pills me-3" id="v-pills-tab" role="tablist"
+                        aria-orientation="vertical">
+                        {% for j, h in enumerate(i.hourly) %}
+                        <button class="nav-link{{' active' if j == 0 else ''}}" id="hourly-{{i.id}}-{{j}}-tab"
+                            data-bs-toggle="pill" data-bs-target="#hourly-{{i.id}}-{{j}}" type="button" role="tab"
+                            aria-controls="hourly-{{i.id}}-{{j}}"
+                            aria-selected="true">{{datetime.fromisoformat(h.timeStr).strftime('%H')}}时</button>
+                        {% endfor %}
+                    </div>
+                    <div class="tab-content">
+                        {% for j, h in enumerate(i.hourly) %}
+                        <div class="tab-pane fade{{' show active' if j == 0 else ''}}" id="hourly-{{i.id}}-{{j}}"
+                            role="tabpanel" aria-labelledby="hourly-{{i.id}}-{{j}}-tab" tabindex="0">
+                            <table class="table">
+                                {% for name, attr in (
+                                ('温度', 'temperature'),
+                                ('体感温度', 'feels'),
+                                ('湿度', 'humidity'),
+                                ('天气', 'cap'),
+                                ('云层覆盖率', 'cloudCover'),
+                                ('可见度', 'vis'),
+                                ('风向', 'windDesc')
+                                ) %}
+                                <tr>
+                                    <th scope="row">{{name}}</th>
+                                    <td>{{h[attr]}}</td>
+                                </tr>
+                                {% endfor %}
+                                <tr>
+                                    <th scope="row">气压</th>
+                                    <td>{{h.airPressure}}{{h.pressureUnit}}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">风速</th>
+                                    <td>{{h.windSpeed}}{{h.windSpeedUnit}}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% if nowcasting %}
+        <h4>{{nowcasting.summary}}</h4>
+        {% endif %}
+        {% if alertsInfo %}
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">警告</h4>
+            <h6 class="alert-heading">{{alertsInfo.title}}</h6>
+            <p>{{alertsInfo.safetyGuide}}</p>
+            <hr>
+            <p class="mb-0">来自{{alertsInfo.credit}}</p>
+        </div>
+        {% endif %}
+    </div>
+    <p>最后更新于{{datetime.fromisoformat(lastUpdated)}}</p>
+</div>
+<canvas class="my-4 w-100" id="chart" width="900" height="380"></canvas>
+<script id="chart-data" type="application/json">
+    {{chart_data|safe}}
+</script>
+<script>
+    const ctx = document.getElementById('chart');
+    const chartData = JSON.parse(document.getElementById('chart-data').innerText);
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartData.map(i => i[0]),
+            datasets: [{
+                label: '最高温度',
+                data: chartData.map(i => Number.parseInt(i[1])),
+                lineTension: 0,
+                backgroundColor: 'transparent',
+                borderColor: 'red',
+                borderWidth: 4,
+                pointBackgroundColor: 'red'
+            }, {
+                label: '最低温度',
+                data: chartData.map(i => Number.parseInt(i[2])),
+                lineTension: 0,
+                backgroundColor: 'transparent',
+                borderColor: 'blue',
+                borderWidth: 4,
+                pointBackgroundColor: 'blue'
+            }]
+        }
+    });
+</script>
+{% endblock %}

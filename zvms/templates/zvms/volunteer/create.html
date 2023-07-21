@@ -6,11 +6,13 @@
     <div class="row">
         <div class="col-12">
             <label class="form-label" for="name">输入义工名称</label>
-            <input class="form-control" type="text" id="name" name="name" placeholder="义工名称" maxlength="32" value="{{name}}" required>
+            <input class="form-control" type="text" id="name" name="name" placeholder="义工名称" maxlength="32"
+                value="{{name}}" required>
         </div>
         <div class="col-12">
             <label class="form-label" for="description">输入义工描述</label>
-            <textarea class="form-control" id="description" name="description" rows="5" required>{{description}}</textarea>
+            <textarea class="form-control" id="description" name="description" rows="5"
+                required>{{description}}</textarea>
         </div>
         <div class="col-6">
             <label class="form-label" for="time">输入义工报名截止时间</label>
@@ -18,15 +20,18 @@
         </div>
         <div class="col-6">
             <label class="form-label" for="reward">输入预期获得的义工时间</label>
-            <input class="form-control" type="number" id="reward" placeholder="义工时间" name="reward" value="{{reward}}" required>
+            <input class="form-control" type="number" id="reward" placeholder="义工时间" name="reward" value="{{reward}}"
+                required>
         </div>
         <div class="col-12" id="classes">
             <div class="row">
                 <div class="col-5">
-                    <input class="form-control" type="number" name="classes" placeholder="班级ID" value="{{classes[0][0] if classes else ''}}" required>
+                    <input class="form-control" type="number" name="classes" placeholder="班级ID"
+                        value="{{classes[0][0] if classes else ''}}" required>
                 </div>
                 <div class="col-5">
-                    <input class="form-control" type="number" name="classes_max" placeholder="允许报名的最大人数" value="{{classes[0][1] if classes else ''}}" required>
+                    <input class="form-control" type="number" name="classes_max" placeholder="允许报名的最大人数"
+                        value="{{classes[0][1] if classes else ''}}" required>
                 </div>
                 <div class="col">
                     <button class="btn btn-primary" type="button" id="add-class">添加</button>
@@ -36,13 +41,16 @@
             {% for classid, max in classes[1:] %}
             <div class="row" id="class-{{classid}}">
                 <div class="col-5">
-                    <input class="form-control" type="number" name="classes" placeholder="班级ID" value="{{classid}}" required>
+                    <input class="form-control" type="number" name="classes" placeholder="班级ID" value="{{classid}}"
+                        required>
                 </div>
                 <div class="col-5">
-                    <input class="form-control" type="number" name="classes_max" placeholder="允许报名的最大人数" value="{{max}}" required>
+                    <input class="form-control" type="number" name="classes_max" placeholder="允许报名的最大人数" value="{{max}}"
+                        required>
                 </div>
                 <div class="col">
-                    <button class="btn btn-danger" type="button" onclick="document.getElementById('class-{{classid}}').remove()">删除</button>
+                    <button class="btn btn-danger" type="button"
+                        onclick="document.getElementById('class-{{classid}}').remove()">删除</button>
                 </div>
             </div>
             {% endfor %}

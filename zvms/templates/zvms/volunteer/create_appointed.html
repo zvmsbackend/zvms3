@@ -6,15 +6,18 @@
     <div class="row">
         <div class="col-12">
             <label class="form-label" for="name">输入义工名称</label>
-            <input class="form-control" type="text" id="name" name="name" placeholder="义工名称" maxlength="32" value="{{name}}" required>
+            <input class="form-control" type="text" id="name" name="name" placeholder="义工名称" maxlength="32"
+                value="{{name}}" required>
         </div>
         <div class="col-12">
             <label class="form-label" for="description">输入义工描述</label>
-            <textarea class="form-control" id="description" name="description" rows="5" required>{{description}}</textarea>
+            <textarea class="form-control" id="description" name="description" rows="5"
+                required>{{description}}</textarea>
         </div>
         <div class="col-{{'6' if Permission.MANAGER.authorized(_permission) else '12'}}">
             <label class="form-label" for="reward">输入预期获得的义工时间</label>
-            <input class="form-control" type="number" id="reward" name="reward" placeholder="义工时间" value="{{reward}}" required>
+            <input class="form-control" type="number" id="reward" name="reward" placeholder="义工时间" value="{{reward}}"
+                required>
         </div>
         {% if Permission.MANAGER.authorized(_permission) %}
         <div class="col-6">
@@ -26,7 +29,8 @@
         <div class="col-12" id="participants">
             <div class="row">
                 <div class="col-8">
-                    <input class="form-control" type="text" name="participants" placeholder="用户ID或姓名" value="{{participants[0] if participants else ''}}" required>
+                    <input class="form-control" type="text" name="participants" placeholder="用户ID或姓名"
+                        value="{{participants[0] if participants else ''}}" required>
                 </div>
                 <div class="col">
                     <button class="btn btn-primary" type="button" id="add-participant">添加</button>
@@ -36,10 +40,12 @@
             {% for userid in participants[1:] %}
             <div class="row" id="participant-{{userid}}">
                 <div class="col-8">
-                    <input class="form-control" type="text" name="participants" placeholder="用户ID或姓名" value="{{userid}}" required>
+                    <input class="form-control" type="text" name="participants" placeholder="用户ID或姓名" value="{{userid}}"
+                        required>
                 </div>
                 <div class="col">
-                    <button class="btn btn-danger" type="button" onclick="document.getElementById('participant-{{userid}}').remove()">删除</button>
+                    <button class="btn btn-danger" type="button"
+                        onclick="document.getElementById('participant-{{userid}}').remove()">删除</button>
                 </div>
             </div>
             {% endfor %}

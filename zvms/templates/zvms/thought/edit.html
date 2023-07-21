@@ -13,7 +13,8 @@
             {% for i, (filename, used) in pictures %}
             <img src="/static/pictures/{{filename}}" class="img-thumbnail">
             <input type="hidden" name="{{'pictures' if used else ''}}" id="input-{{i}}" value="{{filename}}">
-            <button class="btn btn-{{'danger' if used else 'primary'}}" type="button" id="btn-{{i}}" onclick="selectImage({{i}})">
+            <button class="btn btn-{{'danger' if used else 'primary'}}" type="button" id="btn-{{i}}"
+                onclick="selectImage({{i}})">
                 {{'取消选择' if used else '选择'}}
             </button>
             {% endfor %}
