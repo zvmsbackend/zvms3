@@ -1,3 +1,5 @@
+from typing import TypedDict
+
 from flask import Blueprint, session
 
 from ..framework import (
@@ -8,8 +10,8 @@ from ..framework import (
     api_route,
     url
 )
-from ..misc import Permission, ErrorCode
-from ..util import execute_sql, dump_object, inexact_now
+from ..util import execute_sql, dump_objects, inexact_now
+from ..misc import Permission
 
 Issue = Blueprint('Issue', __name__, url_prefix='/issue')
 
@@ -59,17 +61,34 @@ class Api:
         )
 
 
+class IssueInfo(TypedDict):
+    authorId: int
+    authorName: str
+    content: str
+    time: str
+
+
 @api_route(Issue, url.list, 'GET')
 @login_required
 @permission(Permission.MANAGER)
-def list_issues():
+def list_issues() -> list[IssueInfo]:
     """列出所有的反馈"""
-    return dump_object(Api.list_issues(), ['authorId', 'authorName', 'content', 'time'])
+    return dump_objects(Api.list_issues(), IssueInfo)
+
+
+class IssueTimeAndContent(TypedDict):
+    time: str
+    content: str
+
+
+class MyIssues(TypedDict):
+    today: int
+    total: list[IssueTimeAndContent]
 
 
 @api_route(Issue, url.me, 'GET')
 @login_required
-def my_issues():
+def my_issues() -> MyIssues:
     """
     列出自己提交的反馈  
     `today`字段是当天提交的反馈数量. 一天最多只能提交五条
@@ -77,12 +96,12 @@ def my_issues():
     issues_today, issues_posted = Api.my_issues()
     return {
         'today': issues_today,
-        'total': dump_object(issues_posted, ['time', 'content'])
+        'total': dump_objects(issues_posted, IssueTimeAndContent)
     }
 
 
 @api_route(Issue, url.post)
 @login_required
-def post_issue(content: lengthedstr[64]):
+def post_issue(content: lengthedstr[64]) -> None:
     """提交一条反馈"""
     Api.post_issue(content)

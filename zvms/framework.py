@@ -302,7 +302,7 @@ class FileValidator(Validator):
     def _validate(self, /, arg: FileStorage) -> FileStorage:
         return arg
 
-    def as_json(self) -> Any: 
+    def as_json(self) -> Any:
         return 'file'
 
     def from_files(self) -> bool:
@@ -313,7 +313,7 @@ file = FileValidator()
 
 
 class Url:
-    def __init__(self, /, string: str = '', params: frozenset = frozenset()) -> None:
+    def __init__(self, /, string: str = '', params: dict = MappingProxyType({})) -> None:
         self.string = string
         self.params = params
 
@@ -327,11 +327,12 @@ class Url:
         match index:
             case str():
                 string = f'<int:{index}>'
-            case [index, 'str']:
+                t = 'number'
+            case [index, 'string' as t]:
                 string = f'<{index}>'
         return Url(
             f'{self.string}/{string}',
-            self.params | frozenset([index])
+            MappingProxyType(self.params | {index: t})
         )
 
 
@@ -385,10 +386,32 @@ def annotation2validator(annotation: type | Validator, mode: RouteMode, default:
     return DefaultValidator(ret, default)
 
 
+class Api:
+    def __init__(
+        self, 
+        name: str, 
+        url: Url, 
+        method: Literal['GET', 'POST'],
+        doc: str,
+        permission: Permission,
+        params: dict[str, type], 
+        returns: type
+    ) -> None:
+        self.name = name
+        self.url = url
+        self.method = method
+        self.doc = doc
+        self.permission = permission
+        self.params = params
+        self.returns = returns
+
+    apis: list['Api'] = []
+
+
 def route(
     blueprint: Blueprint,
     url: Url,
-    method: str = 'POST',
+    method: Literal['GET', 'POST'] = 'POST',
     *,
     mode: RouteMode
 ) -> Callable[[Callable], Callable]:
@@ -404,9 +427,24 @@ def route(
             )
 
     def deco(fn: Callable) -> Callable:
+        sig = signature(fn)
+        if mode == 'json':
+            Api.apis.append(Api(
+                fn.__name__,
+                url,
+                method,
+                fn.__doc__,
+                getattr(fn, '__perm__', None),
+                {
+                    name: param.annotation
+                    for name, param in sig.parameters.items()
+                    if name not in url.params
+                },
+                sig.return_annotation
+            ))
         form_params = ObjectValidator({
             name: annotation2validator(param.annotation, mode, param.default)
-            for name, param in signature(fn).parameters.items()
+            for name, param in sig.parameters.items()
             if name not in url.params
         })
 
@@ -465,5 +503,6 @@ def permission(perm: Permission) -> Callable[[Callable], Callable]:
             if int(session.get('permission')) & (perm | Permission.ADMIN):
                 return fn(*args, **kwargs)
             abort(403)
+        wrapper.__perm__ = perm
         return wrapper
     return deco

@@ -1,3 +1,5 @@
+from typing import TypedDict
+
 from flask import Blueprint, session, abort
 
 from ..framework import (
@@ -8,6 +10,7 @@ from ..framework import (
     url
 )
 from ..util import (
+    dump_objects,
     dump_object,
     execute_sql
 )
@@ -30,6 +33,10 @@ class Api:
         ).fetchone()
         if info is None:
             raise ZvmsError(ErrorCode.INCORRECT_USERNAME_OR_PASSWORD)
+        session.update(dict(zip(
+            ('userid', 'username', 'permission', 'classid'),
+            info
+        )))
         return info
 
     @staticmethod
@@ -95,59 +102,75 @@ class Api:
 
 
 @api_route(User, url.login)
-def user_login(userident: str, password: str):
+def user_login(userident: str, password: str) -> None:
     """
-    用户登录
-    班级名称须调用`getUserInfo获取`  
+    用户登录  
+    用户信息须通过getUserInfo获取
     `userident`既可以是用户名, 又可以是用户ID. 虽然id和ident其实是同一个东西, 但后者更不明觉厉
     """
-    return dump_object(Api.login(userident, password), [
-        'userid', 
-        'username', 
-        'permission', 
-        'classId'
-    ])
+    Api.login(userident, password)
 
 
 @api_route(User, url.logout)
-def user_logout():
+def user_logout() -> None:
     """登出"""
     session.clear()
 
 
+class UserInfo(TypedDict):
+    username: str
+    permission: Permission
+    classId: int
+    className: str
+
+
 @api_route(User, url['userid'])
 @login_required
-def get_user_info(userid: int):
+def get_user_info(userid: int) -> UserInfo:
     """获取用户信息"""
-    return dict(zip([
-        'username',
-        'permission',
-        'classId',
-        'className'
-    ], Api.user_info(userid)))
+    return dump_object(Api.user_info(userid), UserInfo)
 
 
 @api_route(User, url.modify_password)
 @login_required
-def modify_password(target: int, old: lengthedstr[32, 32], new: lengthedstr[32, 32]):
+def modify_password(
+    target: int, 
+    oldPassword: lengthedstr[32, 32], 
+    newPassword: lengthedstr[32, 32]
+) -> None:
     """
     修改密码  
     普通用户修改自己密码和管理员修改他人密码用的都是同一个api
     """
-    Api.modify_password(target, old, new)
+    Api.modify_password(target, oldPassword, newPassword)
+
+
+class ClassIdAndName(TypedDict):
+    id: int
+    name: str
 
 
 @api_route(User, url('class').list, 'GET')
 @login_required
-def list_classes():
-    return dump_object(Api.get_classes(), ['id', 'name'])
+def list_classes() -> list[ClassIdAndName]:
+    return dump_objects(Api.get_classes(), ClassIdAndName)
+
+
+class UserIdAndName(TypedDict):
+    userid: int
+    username: str
+
+
+class ClassInfo(TypedDict):
+    name: str
+    members: list[UserIdAndName]
 
 
 @api_route(User, url('class')['classid'], 'GET')
 @login_required
-def get_class_info(classid: int):
+def get_class_info(classid: int) -> ClassInfo:
     name, members = Api.class_info(classid)
     return {
         'name': name,
-        'members': dump_object(members, ['userid', 'username'])
+        'members': dump_object(members, UserIdAndName)
     }

@@ -17,6 +17,7 @@ from ..util import (
     username2userid,
     get_primary_key,
     send_notice_to,
+    dump_objects,
     dump_object,
     execute_sql
 )
@@ -28,6 +29,7 @@ from ..misc import (
     VolKind,
     VolType
 )
+from .user import UserIdAndName
 
 Volunteer = Blueprint('Volunteer', __name__, url_prefix='/volunteer')
 
@@ -52,7 +54,7 @@ class Api:
         args: dict, 
         page: int
     ) -> SelectResult:
-        total = execute_sql(
+        count = execute_sql(
             'SELECT COUNT(*) '
             'FROM volunteer AS vol '
             f'JOIN user ON user.userid = vol.holder {where_clause}',
@@ -72,7 +74,7 @@ class Api:
             case None:
                 abort(404)
             case data: ...
-        return total, data
+        return count, data
     
     @staticmethod
     def _can_signup(volid: int) -> bool:
@@ -641,76 +643,92 @@ class Api:
             )
 
 
-def select_volunteers(result: SelectResult):
-    total, data = result
+class VolunteerProfile(TypedDict):
+    id: int
+    name: str
+    status: VolStatus
+    holderId: int
+    holderName: str
+    type: VolType
+
+
+class SelectVolunteers(TypedDict):
+    count: int
+    data: list[VolunteerProfile]
+
+
+def select_volunteers(result: SelectResult) -> SelectVolunteers:
+    count, data = result
     return {
-        'total': total,
-        'data': dump_object(data, [
-            'id',
-            'name',
-            'status',
-            'holderId',
-            'holderName',
-            'type'
-        ])
+        'total': count,
+        'data': dump_objects(data, VolunteerProfile)
     }
 
 
 @api_route(Volunteer, url.search['name']['page'], 'GET')
 @login_required
-def search_volunteers(name: str, page: int):
+def search_volunteers(name: str, page: int) -> SelectVolunteers:
     """搜索义工"""
     return select_volunteers(Api.search_volunteers(name, page))
 
 
 @api_route(Volunteer, url.list['page'], 'GET')
 @login_required
-def list_volunteers(page: int):
+def list_volunteers(page: int) -> SelectVolunteers:
     """列出所有义工"""
     return select_volunteers(Api.list_volunteers(page))
 
 
 @api_route(Volunteer, url.me['page'], 'GET')
 @login_required
-def my_volunteers(page: int):
+def my_volunteers(page: int) -> SelectVolunteers:
     """列出和自己有关的义工"""
     return select_volunteers(Api.my_volunteers(page))
 
 
+class Participant(TypedDict):
+    userid: int
+    username: str
+    thoughtVisible: bool
+
+
+class VolunteerInfo(TypedDict):
+    name: str
+    description: str
+    status: VolStatus
+    holderId: int
+    holderName: str
+    type: VolType
+    reward: int
+    canSignup: bool
+    participants: list[Participant]
+    signups: list[UserIdAndName]
+
+
 @api_route(Volunteer, url['volid'], 'GET')
 @login_required
-def get_volunteer_info(volid: int):
+def get_volunteer_info(volid: int) -> VolunteerInfo:
     """获取义工信息"""
     *spam, participants, signups = Api.volunteer_info(volid)
-    return dict(zip([
-        'name',
-        'description',
-        'status',
-        'holderId',
-        'holderName',
-        'type',
-        'reward',
-        'time',
-        'canSignup',
-    ], spam)) | {
-        'participants': dump_object(participants, [
+    return dump_object(spam, VolunteerInfo) | {
+        'participants': dump_objects(participants, [
             'userid',
             'username',
             'thoughtVisible'
         ]),
-        'signups': dump_object(signups, [
+        'signups': dump_objects(signups, [
             'userid',
             'username'
         ])
     }
 
 
-class JsonClass(TypedDict):
+class Class(TypedDict):
     id: int
     max: int
 
 
-def flatten_json_classes(classes: list[JsonClass]):
+def flatten_json_classes(classes: list[Class]):
     return [
         (cls['id'], cls['max'])
         for cls in classes
@@ -725,8 +743,8 @@ def create_volunteer(
     description: str, 
     time: date, 
     reward: int, 
-    classes: requiredlist[JsonClass]
-):
+    classes: requiredlist[Class]
+) -> None:
     """创建校内义工"""
     return Api.create_volunteer(
         name,
@@ -745,7 +763,7 @@ def create_appointed_volunteer(
     type: Literal[VolType.INSIDE, VolType.OUTSIDE],
     reward: int,
     participants: requiredlist[str]
-):
+) -> None:
     """创建指定义工"""
     return Api.create_appointed_volunteer(
         name,
@@ -762,7 +780,7 @@ def create_appointed_volunteer(
 def audit_volunteer(
     volid: int, 
     status: Literal[VolStatus.ACCEPTED, VolStatus.REJECTED]
-):
+) -> None:
     """审核义工(团支书)"""
     Api.audit_volunteer(volid, status)
 
@@ -775,7 +793,7 @@ def create_special_volunteer(
     type: VolType,
     rewards: list[str],
     participants: list[str]
-):
+) -> None:
     """创建特殊义工"""
     return Api.create_special_volunteer(
         name,
@@ -787,14 +805,14 @@ def create_special_volunteer(
 
 @api_route(Volunteer, url['volid'].signup)
 @login_required
-def signup_volunteer(volid: int):
+def signup_volunteer(volid: int) -> None:
     """报名义工"""
     Api.signup_volunteer(volid)
 
 
 @api_route(Volunteer, url['volid'].signup.rollback)
 @login_required
-def rollback_volunteer_signup(volid: int, userid: int):
+def rollback_volunteer_signup(volid: int, userid: int) -> None:
     """撤回义工报名"""
     Api.rollback_volunteer_signup(volid, userid)
 
@@ -802,21 +820,30 @@ def rollback_volunteer_signup(volid: int, userid: int):
 @api_route(Volunteer, url['volid'].signup.accept)
 @login_required
 @permission(Permission.CLASS)
-def accept_volunteer_signup(volid: int, userid: int):
+def accept_volunteer_signup(volid: int, userid: int) -> None:
     """接受报名(团支书)"""
     Api.accept_volunteer_signup(volid, userid)
 
 
 @api_route(Volunteer, url['volid'].delete)
 @login_required
-def delete_volunteer(volid: int):
+def delete_volunteer(volid: int) -> None:
     """删除义工"""
     Api.delete_volunteer(volid)
 
 
+class VolunteerModificationPreparation(TypedDict):
+    kind: VolKind
+    name: str
+    description: str
+    time: str
+    reward: int
+    type: VolType
+
+
 @api_route(Volunteer, url['volid'].modify, 'GET')
 @login_required
-def prepare_modify_volunteer(volid: int):
+def prepare_modify_volunteer(volid: int) -> VolunteerModificationPreparation:
     """
     获取修改义工所必须的信息
 
@@ -825,16 +852,9 @@ def prepare_modify_volunteer(volid: int):
     3. kind为3(SPECIAL)时, 忽略classes字段
     """
     *spam, participants, classes = Api.prepare_modify_volunteer(volid)
-    return dict(zip([
-        'kind',
-        'name',
-        'description',
-        'time',
-        'reward',
-        'type'
-    ], spam)) | {
-        'participants': dump_object(participants, ['userid', 'reward']),
-        'classes': dump_object(classes, ['id', 'max'])
+    return dump_object(spam, VolunteerModificationPreparation) | {
+        'participants': dump_objects(participants, UserIdAndName),
+        'classes': dump_objects(classes, Class)
     }
         
 
@@ -847,7 +867,7 @@ def modify_special_volunteer(
     type: VolType,
     rewards: list[str],
     participants: list[str]
-):
+) -> None:
     """修改特殊义工"""
     Api.modify_special_volunteer(
         volid,
@@ -867,8 +887,8 @@ def modify_volunteer(
     description: str,
     time: date,
     reward: int,
-    classes: list[JsonClass]
-):
+    classes: list[Class]
+) -> None:
     """修改校内义工"""
     Api.modify_volunteer(
         volid,
@@ -889,7 +909,7 @@ def modify_appointed_volunteer(
     type: Literal[VolType.INSIDE, VolType.OUTSIDE],
     reward: int,
     participants: list[str]
-):
+) -> None:
     """修改指定义工"""
     Api.modify_appointed_volunteer(
         volid,

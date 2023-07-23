@@ -1,22 +1,17 @@
-import io
 import csv
-import os.path
+import io
 
 from werkzeug.datastructures import FileStorage
 from flask import (
     Blueprint,
     send_file,
     redirect,
-    abort,
-    session
 )
 
 from .util import (
-    ZvmsError,
     render_template,
     render_markdown,
     get_user_scores,
-    send_notice_to,
     execute_sql,
     pagination
 )

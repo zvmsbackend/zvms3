@@ -19,10 +19,12 @@ from ..misc import (
 )
 from ..util import (
     send_notice_to,
-    execute_sql,
+    dump_objects,
     dump_object,
+    execute_sql,
     md5
 )
+from .user import UserIdAndName
 
 Thought = Blueprint('Thought', __name__, url_prefix='/thought')
 
@@ -41,7 +43,7 @@ SelectResult: TypeAlias = tuple[
 class Api:
     @staticmethod
     def _select_thoughts(where_clause: str, args: dict, page: int) -> SelectResult:
-        total = execute_sql(
+        count = execute_sql(
             'SELECT COUNT(*) '
             'FROM user_vol AS uv '
             'JOIN volunteer AS vol ON vol.id = uv.volid '
@@ -63,7 +65,7 @@ class Api:
             case None:
                 abort(404)
             case data: ...
-        return total, data
+        return count, data
     
     @staticmethod
     def list_thoughts(page: int) -> SelectResult:
@@ -99,7 +101,7 @@ class Api:
         int, # 感想状态
         str, # 感想
         int, # 义工时间
-        int, # 期望的义工时间
+        int, # 预期的义工时间
         list[str] # 图片
     ]:
         match execute_sql(
@@ -357,31 +359,38 @@ class Api:
         )
 
 
-def select_thoughts(result: SelectResult):
-    total, data = result
+class ThoughtProfile(TypedDict):
+    userid: int
+    username: str
+    volId: int
+    volName: str
+    status: ThoughtStatus
+
+
+class SelectThoughts(TypedDict):
+    count: int
+    data: list[ThoughtProfile]
+
+
+def select_thoughts(result: SelectResult) -> SelectThoughts:
+    count, data = result
     return {
-        'total': total,
-        'data': dump_object(data, [
-            'userid',
-            'username'
-            'volId',
-            'volName',
-            'status'
-        ])
+        'count': count,
+        'data': dump_objects(data, ThoughtProfile)
     }
 
 
 @api_route(Thought, url.list['page'], 'GET')
 @login_required
 @permission(Permission.MANAGER | Permission.AUDITOR)
-def list_thoughts(page: int):
+def list_thoughts(page: int) -> SelectThoughts:
     """列出感想(普通用户不能看)"""
     return select_thoughts(Api.list_thoughts(page))
 
 
 @api_route(Thought, url.me['page'], 'GET')
 @login_required
-def my_thoughts(page: int):
+def my_thoughts(page: int) -> SelectThoughts:
     """与自己有关的感想"""
     return select_thoughts(Api.my_thoughts(page))
 
@@ -389,7 +398,7 @@ def my_thoughts(page: int):
 @api_route(Thought, url.unaudited['page'], 'GET')
 @login_required
 @permission(Permission.MANAGER | Permission.AUDITOR)
-def unaudited_thoughts(page: int):
+def unaudited_thoughts(page: int) -> SelectThoughts:
     """
     未审核感想  
     对于MANAGER, 列出校内义工的感想; 对于AUDITOR, 列出校外的
@@ -397,37 +406,43 @@ def unaudited_thoughts(page: int):
     return select_thoughts(Api.unaudited_thoutghts(page))
 
 
-@api_route(Thought, url['volid']['userid'], 'GET')
-@login_required
-def get_thought_info(volid: int, userid: int):
-    return dict(zip([
-        'username',
-        'classId',
-        'className',
-        'volName',
-        'type',
-        'status',
-        'thought',
-        'reward',
-        'expectedReward',
-        'pictures'
-    ], Api.thought_info(volid, userid)))
+class ThoughtInfo(TypedDict):
+    username: str
+    classId: int
+    className: str
+    volName: str
+    type: VolType
+    status: ThoughtStatus
+    reward: int
+    expectedReward: int
+    pictures: list[str]
 
 
 @api_route(Thought, url['volid']['userid'], 'GET')
 @login_required
-def prepare_edit_thought(volid: int, userid: int):
+def get_thought_info(volid: int, userid: int) -> ThoughtInfo:
+    return dump_object(Api.thought_info(volid, userid), ThoughtInfo)
+
+
+class Picture(TypedDict):
+    filename: str
+    used: bool
+
+
+class ThoughtEditingPreparation(TypedDict):
+    name: str
+    status: ThoughtStatus
+    thought: str
+    pictures: list[Picture]
+
+
+@api_route(Thought, url['volid']['userid'], 'GET')
+@login_required
+def prepare_edit_thought(volid: int, userid: int) -> ThoughtEditingPreparation:
     """获取编辑感想所需的信息"""
     *spam, pictures = Api.prepare_edit_thought(volid, userid)
-    return dict(zip([
-        'name',
-        'status',
-        'thought'
-    ], spam)) | {
-        'pictures': dump_object(pictures, [
-            'filename',
-            'used'
-        ])
+    dump_object(spam, ThoughtEditingPreparation) | {
+        'pictures': dump_objects(pictures, Picture)
     }
 
 
@@ -444,7 +459,7 @@ def edit_thought(
     thought: str,
     pictures: list[str],
     files: list[File]
-):
+) -> None:
     _files = []
     for filename, data in files:
         try:
@@ -463,26 +478,26 @@ def edit_thought(
 @api_route(Thought, url['volid']['userid'].audit.first)
 @login_required
 @permission(Permission.CLASS)
-def first_audit(volid: int, userid: int):
+def first_audit(volid: int, userid: int) -> None:
     Api.first_audit(volid, userid)
 
 
 @api_route(Thought, url['volid']['userid'].audit.accept)
 @login_required
 @permission(Permission.AUDITOR | Permission.MANAGER)
-def accept_thought(volid: int, userid: int, reward: int):
+def accept_thought(volid: int, userid: int, reward: int) -> None:
     Api.accept_thought(volid, userid, reward)
 
 
 @api_route(Thought, url['volid']['userid'].audit.reject)
 @login_required
 @permission(Permission.AUDITOR | Permission.MANAGER)
-def reject_thought(volid: int, userid: int):
+def reject_thought(volid: int, userid: int) -> None:
     Api.reject_thought(volid, userid)
 
 
 @api_route(Thought, url['volid']['userid'].audit.pitchback)
 @login_required
 @permission(Permission.AUDITOR | Permission.MANAGER)
-def pitchback_thought(volid: int, userid: int):
+def pitchback_thought(volid: int, userid: int) -> None:
     Api.pitchback_thought(volid, userid)

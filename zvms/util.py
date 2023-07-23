@@ -1,3 +1,4 @@
+from typing import _TypedDictMeta
 from datetime import datetime, date
 from random import choice
 import hashlib
@@ -129,5 +130,9 @@ def pagination(page: int, total: int) -> range:
     return range(max(page - 1, 0), min((total - 1) // 10 + 1, page + 5))
 
 
-def dump_object(result: list[tuple], cols: list[str]) -> list[dict]:
-    return [dict(zip(cols, row)) for row in result]
+def dump_objects(result: list[tuple], cls: _TypedDictMeta) -> list[dict]:
+    return [dump_object(row, cls) for row in result]
+
+
+def dump_object(row: tuple, cls: _TypedDictMeta) -> dict:
+    return dict(zip(cls.__annotations__, row))

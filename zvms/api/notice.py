@@ -1,3 +1,4 @@
+from typing import TypedDict
 from datetime import date
 
 from flask import Blueprint, session
@@ -14,9 +15,10 @@ from ..framework import (
 from ..util import (
     username2userid,
     get_primary_key,
-    dump_object,
+    dump_objects,
     execute_sql
 )
+from .user import UserIdAndName
 
 Notice = Blueprint('Notice', __name__, url_prefix='/notice')
 
@@ -46,7 +48,7 @@ class Api:
         anonymous: bool,
         targets: list[str],
         expire: date
-    ):
+    ) -> None:
         sender = 0 if anonymous else session.get('userid')
         userids = username2userid(targets)
         execute_sql(
@@ -86,7 +88,15 @@ class Api:
         ).fetchall()
 
     @staticmethod
-    def list_notices() -> list[tuple[int, str, str, str, int, str, list[int, str] | None]]:
+    def list_notices() -> list[tuple[
+        int, # ID
+        str, # 标题
+        str, # 内容
+        str, # 过期时间
+        int, # 发送者ID
+        str, # 发送者用户名
+        list[int, str] # 目标
+    ]]:
         return [
             (id, title, content, expire, senderid, sender, targets)
             for id, title, content, expire, school, senderid, sender in execute_sql(
@@ -105,7 +115,7 @@ class Api:
                 'JOIN user ON user.userid = un.userid '
                 'WHERE noticeid = :noticeid',
                 noticeid=id
-            ))) if not school else None) or True
+            ))) if not school else []) or True
         ]
 
     @staticmethod
@@ -162,36 +172,44 @@ class Api:
         execute_sql('DELETE FROM notice WHERE id = :id', id=noticeid)
 
 
+class NoticeInfo(TypedDict):
+    id: int
+    title: str
+    content: str
+    expire: str
+    senderId: int
+    senderName: str
+    targets: list[UserIdAndName]
+
+
 @api_route(Notice, url.list, 'GET')
 @login_required
 @permission(Permission.MANAGER)
-def list_notices():
+def list_notices() -> list[NoticeInfo]:
     """
     列出所有通知  
     用于管理员的编辑通知功能
     """
-    return dump_object(Api.list_notices(), [
-        'id',
-        'title',
-        'content',
-        'expire',
-        'school',
-        'senderId',
-        'senderName'
-    ])
+    *spam, targets = Api.list_notices()
+    return dump_objects(spam, NoticeInfo) | {
+        'targets': dump_objects(targets, UserIdAndName)
+    }
+
+
+class MyNotice(TypedDict):
+    title: str
+    content: str
+    expire: str
+    senderId: int
+    senderName: str
+
 
 
 @api_route(Notice, url.me, 'GET')
 @login_required
-def my_notices():
+def my_notices() -> list[MyNotice]:
     """列出一个人所能看到的所有通知"""
-    return dump_object(Api.my_notices(), [
-        'title',
-        'content',
-        'expire',
-        'senderId',
-        'senderName'
-    ])
+    return dump_objects(Api.my_notices(), MyNotice)
 
 
 @api_route(Notice, url.send)
@@ -203,7 +221,7 @@ def send_notice(
     anonymous: bool,
     targets: list[str],
     expire: date
-):
+) -> None:
     """发送通知"""
     Api.send_notice(
         title,
@@ -222,7 +240,7 @@ def send_school_notice(
     content: str, 
     anonymous: bool, 
     expire: date
-):
+) -> None:
     """发送全校可见的学校通知"""
     Api.send_school_notice(
         title,

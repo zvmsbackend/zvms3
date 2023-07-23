@@ -3,3 +3,5 @@ __pycache__
 pictures
 config.py
 .vscode
+apimgr.json
+*.ts

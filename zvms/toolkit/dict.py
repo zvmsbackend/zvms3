@@ -34,7 +34,7 @@ def zh_dict_helper(soup: bs4.BeautifulSoup, cls: str, tagname: str) -> map:
     return map(Tag.get_text, div.find_all(tagname))
 
 
-@toolkit_route(Dict, url['kind', 'str'], 'GET')
+@toolkit_route(Dict, url['kind', 'string'], 'GET')
 def bing_dictionary_get(
     kind: str,
     word: lengthedstr[45] = _no_word
