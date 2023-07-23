@@ -4,24 +4,29 @@ from typing import (
     is_typeddict,
     _LiteralGenericAlias 
 )
-from operator import itemgetter
+from operator import itemgetter, attrgetter
 from time import perf_counter
 from itertools import chain
 from enum import EnumType
 from datetime import date
 import argparse
 import os.path
+import shutil
 import json
 import re
 
 start = perf_counter()
+
+from flask import render_template as _render_template
 
 from zvms.framework import (
     _RequiredListValidatorMaker,
     _StringValidatorMaker, 
     Api
 )
-from zvms import misc
+from zvms.util import render_markdown
+from zvms.api import Api as ApiBlueprint
+from zvms import misc, app
 
 
 def write_file(filename: str, *content):
@@ -43,12 +48,13 @@ def pascal2camel(pascal: str) -> str:
     return pascal[0].lower() + pascal[1:]
 
 
+enums = {
+    cls for cls in misc.__dict__.values() 
+    if isinstance(cls, type) and issubclass(cls, misc.ZvmsEnum) and cls is not misc.ZvmsEnum
+} 
+
+
 def dump_enum(dst: str) -> None:
-    enums = [
-        (name, cls)
-        for name, cls in misc.__dict__.items()
-        if isinstance(cls, type) and issubclass(cls, misc.ZvmsEnum) and cls is not misc.ZvmsEnum
-    ]
     def format_fields(cls) -> str:
         return',\n'.join(
             f'    {snake2pascal(name)} = {value.value}'
@@ -63,12 +69,12 @@ const {camel_name}ToString = [
 {tostring}
 ];
 """.format(
-            pascal_name=name,
-            camel_name=pascal2camel(name),
+            pascal_name=cls.__name__,
+            camel_name=pascal2camel(cls.__name__),
             fields=format_fields(cls),
             tostring=',\n'.join(f"    '{i}'" for i in cls.__tostr__)
         )
-        for name, cls in enums
+        for cls in enums
     ), """
 export enum Permission {{
 {fields}
@@ -88,7 +94,7 @@ const permissionToString = {{
 }};""".format(
         exports=',\n'.join(
             f'    {clsname}ToString'
-            for clsname in chain(map(itemgetter(0), enums), ('permission',))
+            for clsname in chain(map(attrgetter('__name__'), enums), ('permission',))
         )
 ))
     
@@ -108,20 +114,27 @@ def search_structs() -> set[TypedDict]:
             search(param)
         search(api.returns)
     return ret
+    
+
+structs = search_structs()
 
 
-def py2ts(ann: type, in_structs: bool) -> str:
+def py2ts(ann: type, in_structs: bool, enable_link: bool = False) -> str:
     if is_typeddict(ann):
+        if enable_link:
+            return f'<a href="/structs.html#{ann.__name__}">{ann.__name__}</a>'
         return ann.__name__ if in_structs else 'structs.' + ann.__name__
     match ann:
         case str():
             return ann
         case EnumType():
+            if enable_link:
+                return f'enums.<a href="/enums.html#{ann.__name__}">{ann.__name__}</a>'
             return 'enums.' + ann.__name__
         case GenericAlias(__args__=[arg]):
-            return py2ts(arg, in_structs) + '[]'
+            return py2ts(arg, in_structs, enable_link) + '[]'
         case _RequiredListValidatorMaker(generic_argument=arg):
-            return py2ts(arg, in_structs) + '[]'
+            return py2ts(arg, in_structs, enable_link) + '[]'
         case _StringValidatorMaker():
             return 'string'
         case _LiteralGenericAlias(__args__=args):
@@ -135,21 +148,21 @@ def py2ts(ann: type, in_structs: bool) -> str:
     }[ann]
 
 
-def dump_structs(dst: str) -> None:
-    structs = search_structs()
-    write_file(dst, 'import * as enum from "./enums";\n\n', '\n'.join(
-"""export interface {name} {{
+def dump_struct(struct: TypedDict, enable_link: bool = False) -> str:
+    return """export interface {name} {{
 {fields}
 }};
 """.format(
         name=struct.__name__,
         fields=',\n'.join(
-            f'    {name}: {py2ts(ann, True)}'
+            f'    {name}: {py2ts(ann, True, enable_link)}'
             for name, ann in struct.__annotations__.items()
         )
-)
-for struct in structs
-    ))
+    )
+
+
+def dump_structs(dst: str) -> None:
+    write_file(dst, 'import * as enum from "./enums";\n\n', '\n'.join(map(dump_struct, structs)))
     
 
 def dump_api(template_file: str, dst: str) -> None:
@@ -169,14 +182,14 @@ def dump_api(template_file: str, dst: str) -> None:
         method=api.method,
         url=api.url.string,
         permission=api.permission,
-        comment_params='' if not total_params else '\n' + '\n'.join(
+        comment_params='' if not api.total_params else '\n' + '\n'.join(
             f'   * @param {name}'
-            for name in total_params
+            for name in api.total_params
         ),
         name=snake2camel(api.name),
-        params='' if not total_params else '\n' + ',\n'.join(
+        params='' if not api.total_params else '\n' + ',\n'.join(
             f'    {name}: {py2ts(ann, False)}'
-            for name, ann in total_params.items()
+            for name, ann in api.total_params.items()
         ) + '\n  ',
         returns=py2ts(api.returns, False),
         function_args=f'this, "{api.method}", `{backslash_url}`' if not api.params
@@ -184,7 +197,7 @@ def dump_api(template_file: str, dst: str) -> None:
       this,
       "{method}",
       `{backslash_url}`, {{
-        {params}
+{params}
       }}
     """.format(
         method=api.method,
@@ -197,9 +210,65 @@ def dump_api(template_file: str, dst: str) -> None:
 )
 for api in Api.apis
 if (backslash_url := re.sub(r'<(int:)?(.+?)>', r'${\2}', api.url.string))
-and (total_params := api.url.params | api.params)
 or True
     ), template))
+
+
+_enums_names = list(map(attrgetter('__name__'), enums))
+_structs_names = list(map(attrgetter('__name__'), structs))
+blueprints = [b for b, _ in ApiBlueprint._blueprints]
+
+
+def render_template(template_name: str, **context):
+    return _render_template(
+        template_name,
+        enums=_enums_names,
+        structs=_structs_names,
+        blueprints=blueprints,
+        **context
+    )
+
+
+def dump_document(dst: str) -> None:
+    app.app_context().push()
+    for dir in [
+        dst, 
+        os.path.join(dst, 'static'), 
+        os.path.join(dst, 'static', 'css'),
+        os.path.join(dst, 'static', 'js')
+    ]:
+        if not os.path.isdir(dir):
+            os.mkdir(dir)
+    shutil.copy(os.path.join('zvms', 'static', 'css', 'index.css'), os.path.join(dst, 'static', 'css', 'index.css'))
+    shutil.copy(os.path.join('zvms', 'static', 'js', 'index.js'), os.path.join(dst, 'static', 'js', 'index.js'))
+    write_file(os.path.join(dst, 'index.html'), render_template('document/index.html'))
+    write_file(os.path.join(dst, 'enums.html'), render_template(
+        'document/enums.html',
+        data=chain(
+            ((enum.__name__, (
+                (name, value, enum.__tostr__[value - 1])
+                for name, value in enum._member_map_.items()
+            ))
+            for enum in enums),
+            (('Permission',(
+                (name, value, misc.permission2str[value])
+                for name, value in misc.Permission._member_map_.items()
+            )),)
+        )
+    ))
+    write_file(os.path.join(dst, 'structs.html'), render_template(
+        'document/structs.html',
+        data=[
+            (struct.__name__, dump_struct(struct, True))
+            for struct in structs
+        ]
+    ))
+    write_file(os.path.join(dst, 'blueprints.html'), render_template(
+        'document/blueprints.html',
+        render_markdown=render_markdown,
+        py2ts=py2ts,
+        dict=dict
+    ))
 
 
 def main():
@@ -217,6 +286,8 @@ def main():
     dump_enum(cfg.enum)
     dump_api(cfg.api_template, cfg.api)
     dump_structs(cfg.struct)
+    dump_document(cfg.doc)
+    print('耗时', perf_counter() - start, '秒')
 
 
 if __name__ == '__main__':

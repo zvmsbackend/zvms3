@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}镇海中学义工管理系统 - API文档{% endblock %}
+{% block body_style %}d-flex flex-nowrap{% endblock %}
+{% block nav %}
+<div class="flex-shrink-0 p-3" style="width: 200px">
+    <a href="/" class="d-flex align-items-center pb-3 mb-3 link-body-emphasis text-decoration-none border-bottom">
+        <span class="fs-5 fw-semibold">ZVMS</span>
+    </a>
+    <ul class="list-unstyled ps-0">
+        <li class="mb-1">
+            <a class="link-body-emphasis text-decoration-none rounded" href="/structs.html">
+                <svg class="bi pe-none me-2" width="16" height="16">
+                    <use href="#add-icon"></use>
+                </svg>
+                接口
+            </a>
+        </li>
+        <li class="mb-1">
+            <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
+                data-bs-toggle="collapse" data-bs-target="#enums-collapse" aria-expanded="false">
+                枚举
+            </button>
+            <div class="collapse" id="enums-collapse">
+                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                    {% for enum in enums %}
+                    <li>
+                        <a href="/enums.html#{{enum}}" class="link-body-emphasis text-decoration-none rounded">
+                            {{enum}}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </li>
+        <li class="mb-1">
+            <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
+                data-bs-toggle="collapse" data-bs-target="#blueprints-collapse" aria-expanded="false">
+                蓝图
+            </button>
+            <div class="collapse" id="blueprints-collapse">
+                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                    {% for blueprint in blueprints %}
+                    <li>
+                        <a href="/blueprints.html#{{blueprint.name}}" class="link-body-emphasis text-decoration-none rounded">
+                            {{blueprint.name}}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </li>
+    </ul>
+</div>
+{% endblock %}

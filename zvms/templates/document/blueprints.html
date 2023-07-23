@@ -1,0 +1,54 @@
+{% extends "document/base.html" %}
+{% block container %}
+<div class="row">
+    <div class="col-3">
+        <nav id="navbar-example3" class="h-100 flex-column align-items-stretch pe-4 border-end">
+            <nav class="nav nav-pills flex-column">
+                {% for blueprint in blueprints %}
+                <a class="nav-link" href="#{{blueprint.name}}">{{blueprint.name}}</a>
+                <nav class="nav nav-pills flex-column">
+                    {% for api in blueprint.__apis__ %}
+                    <a class="nav-link ms-3 my-1" href="#{{blueprint.name}}-{{api.name}}">{{api.name}}</a>
+                    {% endfor %}
+                </nav>
+                {% endfor %}
+            </nav>
+        </nav>
+    </div>
+    <div class="col">
+        <div data-bs-spy="scroll" data-bs-target="#navbar-example3" data-bs-smooth-scroll="true"
+            class="scrollspy-example-2" tabindex="0" style="height: 100vh; overflow: auto">
+            {% for blueprint in blueprints %}
+            <h4 id="{{blueprint.name}}">{{blueprint.name}}</h4>
+            {% for api in blueprint.__apis__ %}
+            <div id="{{blueprint.name}}-{{api.name}}" class="card card-body">
+                <h4 class="card-title">{{api.name}}</h4>
+                <p class="card-text text-center">
+                    {{render_markdown(api.doc)|safe}}
+                </p>
+                <p><pre>[{{api.method}}] {{api.url.string}}</pre></p>
+                <p>权限: {{api.permission}}</p>
+                <h6>参数</h6>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">名称</th>
+                            <th scope="col">类型</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for name, ann in api.total_params.__or__(dict(return=api.returns)).items() %}
+                        <tr>
+                            <td>{{name}}{{'(URL参数)' if name in api.url.params}}</td>
+                            <td>{{py2ts(ann, False, True)|safe}}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

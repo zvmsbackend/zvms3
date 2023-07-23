@@ -90,8 +90,8 @@ class MyIssues(TypedDict):
 @login_required
 def my_issues() -> MyIssues:
     """
-    列出自己提交的反馈  
-    `today`字段是当天提交的反馈数量. 一天最多只能提交五条
+列出自己提交的反馈  
+`today`字段是当天提交的反馈数量. 一天最多只能提交五条
     """
     issues_today, issues_posted = Api.my_issues()
     return {

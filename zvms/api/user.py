@@ -104,9 +104,9 @@ class Api:
 @api_route(User, url.login)
 def user_login(userident: str, password: str) -> None:
     """
-    用户登录  
-    用户信息须通过getUserInfo获取
-    `userident`既可以是用户名, 又可以是用户ID. 虽然id和ident其实是同一个东西, 但后者更不明觉厉
+用户登录  
+用户信息须通过getUserInfo获取  
+`userident`既可以是用户名, 又可以是用户ID. 虽然id和ident其实是同一个东西, 但后者更不明觉厉
     """
     Api.login(userident, password)
 
@@ -139,8 +139,8 @@ def modify_password(
     newPassword: lengthedstr[32, 32]
 ) -> None:
     """
-    修改密码  
-    普通用户修改自己密码和管理员修改他人密码用的都是同一个api
+修改密码  
+普通用户修改自己密码和管理员修改他人密码用的都是同一个api
     """
     Api.modify_password(target, oldPassword, newPassword)
 
@@ -153,6 +153,7 @@ class ClassIdAndName(TypedDict):
 @api_route(User, url('class').list, 'GET')
 @login_required
 def list_classes() -> list[ClassIdAndName]:
+    """获取班级列表"""
     return dump_objects(Api.get_classes(), ClassIdAndName)
 
 
@@ -169,6 +170,7 @@ class ClassInfo(TypedDict):
 @api_route(User, url('class')['classid'], 'GET')
 @login_required
 def get_class_info(classid: int) -> ClassInfo:
+    """获取班级信息"""
     name, members = Api.class_info(classid)
     return {
         'name': name,

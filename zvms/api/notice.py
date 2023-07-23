@@ -187,8 +187,8 @@ class NoticeInfo(TypedDict):
 @permission(Permission.MANAGER)
 def list_notices() -> list[NoticeInfo]:
     """
-    列出所有通知  
-    用于管理员的编辑通知功能
+列出所有通知  
+用于管理员的编辑通知功能
     """
     *spam, targets = Api.list_notices()
     return dump_objects(spam, NoticeInfo) | {

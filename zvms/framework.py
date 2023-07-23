@@ -404,6 +404,7 @@ class Api:
         self.permission = permission
         self.params = params
         self.returns = returns
+        self.total_params = params | url.params
 
     apis: list['Api'] = []
 
@@ -428,26 +429,11 @@ def route(
 
     def deco(fn: Callable) -> Callable:
         sig = signature(fn)
-        if mode == 'json':
-            Api.apis.append(Api(
-                fn.__name__,
-                url,
-                method,
-                fn.__doc__,
-                getattr(fn, '__perm__', None),
-                {
-                    name: param.annotation
-                    for name, param in sig.parameters.items()
-                    if name not in url.params
-                },
-                sig.return_annotation
-            ))
         form_params = ObjectValidator({
             name: annotation2validator(param.annotation, mode, param.default)
             for name, param in sig.parameters.items()
             if name not in url.params
         })
-
         @wraps(fn)
         def wrapper(*args, **kwargs):
             args_dict = request.form if method == 'POST' else request.args
@@ -471,6 +457,25 @@ def route(
                 db.session.rollback()
                 logger.exception(exn)
                 abort(500)
+
+        if mode == 'json':
+            api = Api(
+                fn.__name__,
+                url,
+                method,
+                fn.__doc__,
+                getattr(fn, '__perm__', None),
+                {
+                    name: param.annotation
+                    for name, param in sig.parameters.items()
+                    if name not in url.params
+                },
+                sig.return_annotation
+            )
+            Api.apis.append(api)
+            if not hasattr(blueprint, '__apis__'):
+                blueprint.__apis__ = []
+            blueprint.__apis__.append(api)
         blueprint.add_url_rule(
             url.string,
             view_func=wrapper,

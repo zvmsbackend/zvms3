@@ -845,11 +845,11 @@ class VolunteerModificationPreparation(TypedDict):
 @login_required
 def prepare_modify_volunteer(volid: int) -> VolunteerModificationPreparation:
     """
-    获取修改义工所必须的信息
+获取修改义工所必须的信息
 
-    1. kind为1(INSIDE)时, 忽略participants字段
-    2. kind为2(APPOINTED)时, 忽略participants.reward字段和classes字段
-    3. kind为3(SPECIAL)时, 忽略classes字段
+1. kind为1(INSIDE)时, 忽略participants字段
+2. kind为2(APPOINTED)时, 忽略participants.reward字段和classes字段
+3. kind为3(SPECIAL)时, 忽略classes字段
     """
     *spam, participants, classes = Api.prepare_modify_volunteer(volid)
     return dump_object(spam, VolunteerModificationPreparation) | {

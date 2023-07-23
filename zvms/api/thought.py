@@ -400,8 +400,8 @@ def my_thoughts(page: int) -> SelectThoughts:
 @permission(Permission.MANAGER | Permission.AUDITOR)
 def unaudited_thoughts(page: int) -> SelectThoughts:
     """
-    未审核感想  
-    对于MANAGER, 列出校内义工的感想; 对于AUDITOR, 列出校外的
+未审核感想  
+对于MANAGER, 列出校内义工的感想; 对于AUDITOR, 列出校外的
     """
     return select_thoughts(Api.unaudited_thoutghts(page))
 
