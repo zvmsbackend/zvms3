@@ -7,20 +7,19 @@ from flask import (
     redirect,
     session
 )
-import requests
 
 from .dict import Dict
 from ..framework import (
+    ZvmsError,
     login_required,
-    toolkit_view,
-    route,
+    toolkit_route,
     url
 )
 from ..util import (
     get_with_timeout,
     render_template,
-    execute_sql,
-    random_color
+    random_color,
+    execute_sql
 )
 
 Toolkit = Blueprint('Toolkit', __name__, url_prefix='/toolkit')
@@ -28,14 +27,12 @@ Toolkit = Blueprint('Toolkit', __name__, url_prefix='/toolkit')
 Toolkit.register_blueprint(Dict)
 
 
-@Toolkit.route('/')
-@toolkit_view
+@toolkit_route(Toolkit, url(''), 'GET')
 def index():
     return render_template('toolkit/index.html')
 
 
-@Toolkit.route('/wallpapers')
-@toolkit_view
+@toolkit_route(Toolkit, url.wallpapers, 'GET')
 def wallpapers():
     res = get_with_timeout(
         'https://bing.com/HPImageArchive.aspx?format=js&idx=0&n=7')
@@ -52,8 +49,7 @@ def wallpapers():
     )
 
 
-@Toolkit.route('/birthday')
-@toolkit_view
+@toolkit_route(Toolkit, url.birthday, 'GET')
 def birthday_get():
     today = date.today()
     birthday_today = execute_sql(
@@ -95,9 +91,8 @@ def birthday_get():
     )
 
 
-@route(Toolkit, url.birthday)
+@toolkit_route(Toolkit, url.birthday)
 @login_required
-@toolkit_view
 def birthday_post(birthday: date):
     match execute_sql(
         'SELECT COUNT(*) FROM birthday WHERE userid = :userid',
@@ -105,7 +100,7 @@ def birthday_post(birthday: date):
     ).fetchone():
         case [0]: ...
         case _:
-            return render_template('toolkit/error.html', msg='生日已注册')
+            raise ZvmsError('生日已注册')
     execute_sql(
         'INSERT INTO birthday(userid, year, month, day) '
         'VALUES(:userid, :year, :month, :day)',
@@ -117,14 +112,12 @@ def birthday_post(birthday: date):
     return redirect('/toolkit/birthday')
 
 
-@Toolkit.route('/3500')
-@toolkit_view
+@toolkit_route(Toolkit, url('3500'), 'GET')
 def words_3500():
     return render_template('toolkit/3500.html')
 
 
-@Toolkit.route('/weather')
-@toolkit_view
+@toolkit_route(Toolkit, url.weather, 'GET')
 def msn_weather():
     res = get_with_timeout('https://www.msn.cn/zh-cn/weather/forecast/')
     match = re.search(

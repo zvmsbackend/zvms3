@@ -13,18 +13,17 @@ from flask import (
 
 from .util import (
     ZvmsError,
-    execute_sql,
     render_template,
     render_markdown,
     get_user_scores,
     send_notice_to,
-    md5
+    execute_sql,
+    pagination
 )
 from .framework import (
     login_required,
     permission,
-    route,
-    view,
+    zvms_route,
     url
 )
 from .misc import (
@@ -32,14 +31,14 @@ from .misc import (
     Permission,
     VolType
 )
+from .api.thought import Api as ThoughtApi, SelectResult
 
 Thought = Blueprint('Thought', __name__, url_prefix='/thought')
 
 
-@Thought.route('/csv')
+@zvms_route(Thought, url.csv, 'GET')
 @login_required
 @permission(Permission.MANAGER)
-@view
 def data_csv():
     file = io.StringIO()
     writer = csv.writer(file)
@@ -58,28 +57,8 @@ def data_csv():
     return send_file(io.BytesIO(file.getvalue().encode()), download_name='data.csv')
 
 
-def select_thoughts(where_clause: str, args: dict, page: str, base_url: str):
-    total = execute_sql(
-        'SELECT COUNT(*) '
-        'FROM user_vol AS uv '
-        'JOIN volunteer AS vol ON vol.id = uv.volid '
-        f'WHERE uv.status != 1 AND ({where_clause})',
-        **args
-    ).fetchone()[0]
-    thoughts = execute_sql(
-        'SELECT uv.userid, user.username, uv.volid, vol.name, uv.status '
-        'FROM user_vol AS uv '
-        'JOIN user ON user.userid = uv.userid '
-        'JOIN volunteer AS vol ON vol.id = uv.volid '
-        f'WHERE uv.status != 1 AND ({where_clause}) '
-        'ORDER BY uv.volid DESC '
-        'LIMIT 10 '
-        'OFFSET :offset',
-        **args,
-        offset=page * 10
-    ).fetchall()
-    if not thoughts:
-        abort(404)
+def select_thoughts(result: SelectResult, page: int, base_url: str):
+    total, thoughts = result
     return render_template(
         'zvms/thought/list.html',
         data=[
@@ -88,86 +67,68 @@ def select_thoughts(where_clause: str, args: dict, page: str, base_url: str):
         ],
         base_url=base_url,
         page=page,
-        pages=range(page, min(page + 5, (total - 1) // 10 + 1)),
+        pages=pagination(page, total),
         total=total
     )
 
 
-@route(Thought, url.list, 'GET')
+@zvms_route(Thought, url.list, 'GET')
 @login_required
 @permission(Permission.MANAGER | Permission.AUDITOR)
-@view
 def list_thoughts(page: int = 0):
-    return select_thoughts('TRUE', {}, page, '/thought/list')
+    return select_thoughts(
+        ThoughtApi.list_thoughts(page), 
+        page, 
+        '/thought/list'
+    )
 
 
-@route(Thought, url.me, 'GET')
+@zvms_route(Thought, url.me, 'GET')
 @login_required
-@view
 def my_thoughts(page: int = 0):
     return select_thoughts(
-        'uv.userid = :userid',
-        {
-            'userid': session.get('userid')
-        },
+        ThoughtApi.my_thoughts(page),
         page,
         '/thought/me'
     )
 
 
-@route(Thought, url.unaudited, 'GET')
+@zvms_route(Thought, url.unaudited, 'GET')
 @login_required
 @permission(Permission.AUDITOR | Permission.MANAGER)
-@view
 def unaudited_thoughts(page: int = 0):
     return select_thoughts(
-        'uv.status = 4 AND vol.type = :type',
-        {
-            'type': VolType.INSIDE if Permission.MANAGER.authorized() else VolType.OUTSIDE
-        },
+        ThoughtApi.unaudited_thoutghts(page),
         page,
         '/thought/unaudited'
     )
 
 
-@Thought.route('/<int:volid>/<int:userid>')
+@zvms_route(Thought, url['volid']['userid'], 'GET')
 @login_required
-@view
 def thought_info(volid: int, userid: int):
-    match execute_sql(
-        'SELECT user.username, user.classid, class.name, vol.name, vol.type, uv.status, uv.thought, uv.reward, vol.reward '
-        'FROM user_vol AS uv '
-        'JOIN user ON user.userid = uv.userid '
-        'JOIN class ON class.id = user.classid '
-        'JOIN volunteer AS vol ON vol.id = uv.volid '
-        'WHERE uv.userid = :userid AND uv.volid = :volid',
-        userid=userid,
-        volid=volid
-    ).fetchone():
-        case None:
-            abort(404)
-        case [username, classid, classname, volname, type, status, thought, reward, expected_reward]:
-            status = ThoughtStatus(status)
-    if userid != int(session.get('userid')) and not (
-        (Permission.CLASS.authorized() and classid != int(session.get('classid'))) or
-        (Permission.MANAGER | Permission.AUDITOR).authorized()
-    ):
-        return render_template('zvms/error.html', msg='权限不足')
-    pictures = execute_sql(
-        'SELECT filename FROM picture WHERE userid = :userid AND volid = :volid',
-        userid=userid,
-        volid=volid
-    ).scalars().all()
+    (
+        username,
+        classid,
+        class_name,
+        volname,
+        type,
+        status,
+        thought,
+        reward,
+        expected_reward,
+        pictures
+    ) = ThoughtApi.thought_info(volid, userid)
     return render_template(
         'zvms/thought/thought.html',
         userid=userid,
         username=username,
         classid=classid,
-        classname=classname,
+        classname=class_name,
         volid=volid,
         volname=volname,
         type=VolType(type),
-        status=status,
+        status=ThoughtStatus(status),
         thought=render_markdown(thought),
         reward=reward,
         expected_reward=expected_reward,
@@ -175,245 +136,78 @@ def thought_info(volid: int, userid: int):
     )
 
 
-@Thought.route('/<int:volid>/<int:userid>/edit')
+@zvms_route(Thought, url['volid']['userid'].edit, 'GET')
 @login_required
-@view
 def edit_thought_get(volid: int, userid: int):
-    if userid != int(session.get('userid')):
-        return render_template('zvms/error.html', msg='不能编辑他人的感想')
-    match execute_sql(
-        'SELECT vol.name, uv.status, uv.thought '
-        'FROM user_vol AS uv '
-        'JOIN volunteer AS vol ON vol.id = uv.volid '
-        'WHERE uv.userid = :userid AND uv.volid = :volid ',
-        userid=userid,
-        volid=volid
-    ).fetchone():
-        case None:
-            abort(404)
-        case [_, ThoughtStatus.ACCEPTED | ThoughtStatus.REJECTED | ThoughtStatus.WAITING_FOR_SIGNUP_AUDIT, _]:
-            return render_template('zvms/error.html', msg='不能编辑该感想')
-        case [volname, status, thought]:
-            status = ThoughtStatus(status)
-    pictures = execute_sql(
-        'SELECT filename, userid = :userid '
-        'FROM picture '
-        'WHERE volid = :volid',
-        userid=userid,
-        volid=volid
-    ).fetchall()
-    pictures = execute_sql(
-        'SELECT DISTINCT filename '
-        'FROM picture '
-        'WHERE volid = :volid',
-        volid=volid
-    ).scalars().all()
-    pictures_used = set(execute_sql(
-        'SELECT filename '
-        'FROM picture '
-        'WHERE volid = :volid AND userid = :userid',
-        volid=volid,
-        userid=userid
-    ).scalars().all())
-    pictures = [
-        (filename, filename in pictures_used)
-        for filename in pictures
-    ]
+    (
+        volname, 
+        status, 
+        thought, 
+        pictures
+    ) = ThoughtApi.prepare_edit_thought(volid, userid)
     return render_template(
         'zvms/thought/edit.html',
         userid=userid,
         volid=volid,
         volname=volname,
-        status=status,
+        status=ThoughtStatus(status),
         thought=thought,
         pictures=enumerate(pictures)
     )
 
 
-@route(Thought, url['volid']['userid'].edit)
+@zvms_route(Thought, url['volid']['userid'].edit)
 @login_required
-@view
-def edit_thought(volid: int, userid: int, thought: str, pictures: list[str], files: list[FileStorage], submit: bool):
-    if userid != int(session.get('userid')):
-        return render_template('zvms/error.html', msg='不能编辑他人的感想')
-    match execute_sql(
-        'SELECT status FROM user_vol WHERE userid = :userid AND volid = :volid',
-        userid=userid,
-        volid=volid
-    ).fetchone():
-        case None:
-            abort(404)
-        case [ThoughtStatus.DRAFT | ThoughtStatus.WAITING_FOR_FIRST_AUDIT | ThoughtStatus.WAITING_FOR_FINAL_AUDIT] if not submit: ...
-        case [ThoughtStatus.DRAFT] if submit: ...
-        case _:
-            return render_template('zvms/error.html', msg='不能编辑该感想')
-    execute_sql(
-        'DELETE FROM picture WHERE volid = :volid AND userid = :userid',
-        volid=volid,
-        userid=userid
+def edit_thought(
+    volid: int, 
+    userid: int, 
+    thought: str, 
+    pictures: list[str], 
+    files: list[FileStorage], 
+    submit: bool
+):
+    files = [
+        (file.filename, file.read())
+        for file in files
+    ]
+    ThoughtApi.edit_thought(
+        volid,
+        userid,
+        thought,
+        pictures,
+        files,
+        submit
     )
-    for filename in pictures:
-        if execute_sql(
-            'SELECT COUNT(*) FROM picture WHERE volid = :volid AND filename = :filename',
-            volid=volid,
-            filename=filename
-        ).fetchone()[0] == 0:
-            return render_template('zvms/error.html', msg=f'图片{filename}不存在')
-        execute_sql(
-            'INSERT INTO picture(volid, userid, filename) '
-            'VALUES(:volid, :userid, :filename)',
-            volid=volid,
-            userid=userid,
-            filename=filename
-        )
-    for file in files:
-        data = file.read()
-        ext = file.filename.split('.')[-1]
-        filename = f'{md5(data)}.{ext}'
-        match execute_sql(
-            'SELECT * FROM picture '
-            'WHERE volid = :volid AND userid = :userid AND filename = :filename',
-            volid=volid,
-            userid=userid,
-            filename=filename
-        ).fetchone():
-            case None: ...
-            case _:
-                continue
-        execute_sql(
-            'INSERT INTO picture(volid, userid, filename) '
-            'VALUES(:volid, :userid, :filename)',
-            volid=volid,
-            userid=userid,
-            filename=filename
-        )
-        match execute_sql(
-            'SELECT COUNT(*) FROM picture WHERE filename = :filename',
-            filename=filename
-        ).fetchone():
-            case [1]: ...
-            case _:
-                continue
-        with open(os.path.join('zvms', 'static', 'pictures', filename), 'wb') as f:
-            f.write(data)
-    if submit:
-        execute_sql(
-            'UPDATE user_vol SET thought = :thought, status = :status '
-            'WHERE userid = :userid AND volid = :volid',
-            thought=thought,
-            status=ThoughtStatus.WAITING_FOR_FIRST_AUDIT,
-            userid=userid,
-            volid=volid
-        )
-    else:
-        execute_sql(
-            'UPDATE user_vol SET thought = :thought '
-            'WHERE userid = :userid AND volid = :volid',
-            thought=thought,
-            userid=userid,
-            volid=volid
-        )
     return redirect(f'/thought/{volid}/{userid}')
 
 
-@route(Thought, url['volid']['userid'].audit.first)
+@zvms_route(Thought, url['volid']['userid'].audit.first)
 @login_required
 @permission(Permission.CLASS)
-@view
 def first_audit(volid: int, userid: int):
-    match execute_sql(
-        'SELECT status FROM user_vol WHERE userid = :userid AND volid = :volid',
-        userid=userid,
-        volid=volid
-    ).fetchone():
-        case None:
-            abort(404)
-        case [ThoughtStatus.WAITING_FOR_FIRST_AUDIT]: ...
-        case _:
-            return render_template('zvms/error.html', msg='该感想不能初审')
-    execute_sql(
-        'UPDATE user_vol SET status = 4 WHERE userid = :userid AND volid = :volid',
-        userid=userid,
-        volid=volid
-    )
-    send_notice_to(
-        '感想过审',
-        f'你的[感想](/thought/{volid}/{userid})已通过初审',
-        userid
-    )
+    ThoughtApi.first_audit(volid, userid)
     return redirect(f'/thought/{volid}/{userid}')
 
 
-def test_final(volid: int, userid: int):
-    match execute_sql(
-        'SELECT uv.status, vol.type '
-        'FROM user_vol AS uv '
-        'JOIN volunteer AS vol ON vol.id = uv.volid'
-        'WHERE userid = :userid AND volid = :volid',
-        userid=userid,
-        volid=volid
-    ):
-        case None:
-            abort(404)
-        case [ThoughtStatus.WAITING_FOR_FINAL_AUDIT, VolType.OUTSIDE] if Permission.MANAGER.authorized(): ...
-        case [ThoughtStatus.WAITING_FOR_FINAL_AUDIT, VolType.INSIDE] if Permission.AUDITOR.authorized(): ...
-        case _:
-            raise ZvmsError('不能终审该感想')
-
-
-@route(Thought, url['volid']['userid'].audit.final.accept)
+@zvms_route(Thought, url['volid']['userid'].audit.final.accept)
 @login_required
 @permission(Permission.AUDITOR | Permission.MANAGER)
-@view
 def accept_thought(volid: int, userid: int, reward: int):
-    test_final(volid, userid)
-    execute_sql(
-        'UPDATE user_vol '
-        'SET status = 5, reward = :reward '
-        'WHERE userid = :userid AND volid = :volid',
-        userid=userid,
-        volid=volid,
-        reward=reward
-    )
-    send_notice_to(
-        '感想过审',
-        f'你的[感想](/thought/{volid}/{userid})已被接受, 获得{reward}义工时间',
-        userid
-    )
-    return redirect('/thought/{}/{}'.format(volid, userid))
-
-# 为什么要叫foo这个名字呢?
-# 我也不知道
+    ThoughtApi.accept_thought(volid, userid, reward)
+    return redirect(f'/thought/{volid}/{userid}'.format(volid, userid))
 
 
-def foo(status: ThoughtStatus, volid: int, userid: int, notice_content: str) -> str:
-    test_final(volid, userid)
-    execute_sql(
-        'UPDATE user_vol SET status = :status WHERE userid = :userid AND volid = :volid',
-        userid=userid,
-        volid=volid,
-        status=status
-    )
-    send_notice_to(
-        '义工未过审',
-        f'你的[感想](/thought/{volid}/{userid}){notice_content}',
-        userid
-    )
+@zvms_route(Thought, url['volid']['userid'].audit.final.reject)
+@login_required
+@permission(Permission.AUDITOR | Permission.MANAGER)
+def reject_thought(volid: int, userid: int):
+    ThoughtApi.reject_thought(volid, userid)
     return redirect(f'/thought/{volid}/{userid}')
 
 
-@route(Thought, url['volid']['userid'].audit.final.reject)
+@zvms_route(Thought, url['volid']['userid'].audit.final.pitchback)
 @login_required
-@permission(Permission.AUDITOR)
-@view
-def reject_thought(volid: int, userid: int):
-    foo(ThoughtStatus.REJECTED, volid, userid, '被拒绝, 不可重新提交')
-
-
-@route(Thought, url['volid']['userid'].audit.final.pitchback)
-@login_required
-@permission(Permission.AUDITOR)
-@view
+@permission(Permission.AUDITOR | Permission.MANAGER)
 def pitchback_thought(volid: int, userid: int):
-
-    return foo(ThoughtStatus.PITCHBACK, volid, userid, '被打回, 可以重新提交')
+    ThoughtApi.pitchback_thought(volid, userid)
+    return redirect(f'/thought/{volid}/{userid}')

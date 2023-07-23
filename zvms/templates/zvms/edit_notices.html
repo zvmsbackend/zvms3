@@ -13,9 +13,9 @@
         <div data-bs-spy="scroll" data-bs-target="#list-nav" data-bs-smooth-scroll="true"
             style="height: 100vh; overflow: auto" tabindex="0">
             {% for id, title, content, expire, senderid, sender, targets in notices %}
-            <div class="card">
+            <div class="card" id="notice-{{id}}">
                 <div class="card-body">
-                    <form method="POST" id="notice-{{id}}">
+                    <form method="POST">
                         <input type="hidden" name="noticeid" value="{{id}}">
                         {% if targets %}
                         <div class="row">

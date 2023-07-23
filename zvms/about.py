@@ -1,5 +1,3 @@
-from datetime import date
-
 from flask import (
     Blueprint,
     redirect,
@@ -7,41 +5,24 @@ from flask import (
     session
 )
 
-from .util import (
-    execute_sql,
-    inexact_now,
-    render_template
-)
+from .util import render_template
 from .framework import (
     lengthedstr,
     login_required,
-    route,
-    view,
+    zvms_route,
     url
 )
+from .api.issue import Api as IssueApi
 
 About = Blueprint('About', __name__)
 
 
-@About.route('/about')
-@view
+@zvms_route(About, url.about, 'GET')
 def index():
     issues_posted = None
     issues_today = 0
     if 'userid' in session:
-        issues_posted = execute_sql(
-            'SELECT time, content '
-            'FROM issue '
-            'WHERE author = :author',
-            author=session.get('userid')
-        ).fetchall()
-        issues_today = execute_sql(
-            'SELECT COUNT(*) '
-            'FROM issue '
-            'WHERE author = :author AND time > :today',
-            author=session.get('userid'),
-            today=date.today()
-        ).fetchone()[0]
+        issues_today, issues_posted = IssueApi.my_issues()
     return render_template(
         'zvms/about.html',
         issues_posted=issues_posted,
@@ -49,24 +30,8 @@ def index():
     )
 
 
-@route(About, url.issue)
+@zvms_route(About, url.issue)
 @login_required
-@view
 def issue(content: lengthedstr[64]):
-    times = execute_sql(
-        'SELECT COUNT(*) '
-        'FROM issue '
-        'WHERE author = :id AND time > :today',
-        id=session.get('userid'),
-        today=date.today()
-    ).fetchone()[0]
-    if times >= 5:
-        return render_template('zvms/error.html', msg='反馈已达上限')
-    execute_sql(
-        'INSERT INTO issue(author, content, time) '
-        'VALUES(:author, :content, :time)',
-        author=session.get('userid'),
-        content=content,
-        time=inexact_now()
-    )
+    IssueApi.post_issue(content)
     return redirect(request.referrer)

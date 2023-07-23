@@ -35,8 +35,10 @@
     </thead>
     <tbody>
         {% for time, content in issues_posted %}
-        <td>{{time}}</td>
-        <td>{{content}}</td>
+        <tr>
+            <td>{{time}}</td>
+            <td>{{content}}</td>
+        </tr>
         {% endfor %}
     </tbody>
 </table>

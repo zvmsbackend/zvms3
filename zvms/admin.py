@@ -1,77 +1,39 @@
-from functools import reduce
-from operator import or_
-
 from flask import (
     Blueprint,
-    redirect,
-    session
+    redirect
 )
 
 from .framework import (
     login_required,
     permission,
-    route,
-    view,
+    zvms_route,
     url
 )
-from .util import render_template, execute_sql
+from .util import render_template
 from .misc import Permission, permission2str
+from .api.admin import Api as AdminApi
 
 Admin = Blueprint('Admin', __name__, url_prefix='/admin')
 
 
-@Admin.route('/')
+@zvms_route(Admin, url(''), 'GET')
 @login_required
 @permission(Permission.ADMIN)
-@view
 def index():
     return render_template('zvms/admin.html', permission2str=permission2str)
 
 
-@route(Admin, url.permission)
+@zvms_route(Admin, url.permission)
 @login_required
 @permission(Permission.ADMIN)
-@view
 def alter_permission(userident: str, perm: list[int]):
-    match execute_sql(
-        'SELECT userid, permission FROM user '
-        'WHERE {} = :userident'.format(
-            'userid' if userident.isdecimal() else 'username'
-        ),
-        userident=userident
-    ).fetchone():
-        case None:
-            return render_template('zvms/error.html', msg=f'用户{userident}不存在')
-        case [_, p] if p & Permission.ADMIN:
-            return render_template('zvms/error.html', msg=f'用户{userident}权限不可修改')
-        case [userid, _]: ...
-    execute_sql(
-        'UPDATE user SET permission = :perm '
-        'WHERE userid = :userid',
-        perm=reduce(or_, perm, 0),
-        userid=userid
-    )
+    userid = AdminApi.alter_permission(userident, perm)
     return redirect(f'/user/{userid}')
 
 
-@route(Admin, url.login)
+@zvms_route(Admin, url.login)
 @login_required
 @permission(Permission.ADMIN)
-@view
 def login(userident: str):
-    match execute_sql(
-        'SELECT userid, username, permission, classid FROM user WHERE {} = :userident'.format(
-            'userid' if userident.isdecimal() else 'username'
-        ),
-        userident=userident
-    ).fetchone():
-        case None:
-            return render_template('zvms/error.html', msg=f'用户{userident}不存在')
-        case [_, perm, _] if perm & Permission.ADMIN:
-            return render_template('zvms/error.html', msg=f'不能登录{userident}的账号')
-        case user_info: ...
-    session.update(dict(zip(
-        ('userid', 'username', 'permission', 'classid'),
-        user_info
-    )))
+    AdminApi.login(userident)
     return redirect('/user/login')

@@ -123,3 +123,11 @@ def get_with_timeout(url: str, timeout: int = 1) -> requests.Response:
         return requests.get(url, timeout=timeout)
     except Timeout as exn:
         raise ZvmsError('服务器网络错误') from exn
+    
+
+def pagination(page: int, total: int) -> range:
+    return range(max(page - 1, 0), min((total - 1) // 10 + 1, page + 5))
+
+
+def dump_object(result: list[tuple], cols: list[str]) -> list[dict]:
+    return [dict(zip(cols, row)) for row in result]

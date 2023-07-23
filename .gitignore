@@ -1,3 +1,5 @@
 zvms.db
 __pycache__
 pictures
+config.py
+.vscode

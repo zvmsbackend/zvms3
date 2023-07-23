@@ -1,103 +1,180 @@
-from typing import Callable, Any, _LiteralGenericAlias, overload
+from typing import (
+    _TypedDictMeta,
+    TypeAlias,
+    Callable,
+    Literal,
+    _LiteralGenericAlias
+)
+from types import GenericAlias, MappingProxyType
 from abc import ABCMeta, abstractmethod
+from contextlib import contextmanager
 from inspect import signature, _empty
-from types import GenericAlias
 from urllib.parse import quote
+from functools import partial
 from functools import wraps
+from types import NoneType
 from datetime import date
 from enum import EnumType
+import json
 
+from flask import Blueprint, Response, session, request, redirect, abort
 from werkzeug.datastructures import ImmutableMultiDict, FileStorage
-from flask import Blueprint, session, request, redirect, abort
 from werkzeug.exceptions import NotFound
 
-from .misc import db, logger, Permission
+from .misc import db, logger, Permission, ErrorCode
+
+
+class Any:
+    def __instancecheck__(self, __instance) -> bool:
+        return True
 
 
 class Validator(metaclass=ABCMeta):
-    @abstractmethod
-    def validate(self, /, arg: str | list[str]): ...
+    def validate(self, /, arg: Any) -> Any:
+        if not isinstance(arg, self._validate.__annotations__.get('arg')):
+            Validator.error(self, arg)
+        return self._validate(arg)
 
     @abstractmethod
-    def errormsg(self) -> str: ...
+    def _validate(self, /, arg: Any) -> Any: ...
+
+    @abstractmethod
+    def as_json(self) -> Any: ...
 
     def from_files(self) -> bool:
         return False
 
-    method = ImmutableMultiDict.get
+    where = []
+
+    @contextmanager
+    @staticmethod
+    def path(s: str):
+        Validator.where.append(s)
+        yield
+        Validator.where.pop()
+
+    @staticmethod
+    def error(expected: 'Validator', found: Any) -> None:
+        where = '.'.join(Validator.where)
+        Validator.where.clear()
+        info = {
+            'where': where,
+            'expected': expected.as_json(),
+            'found': found
+        }
+        logger.warn(info)
+        raise ZvmsError(ErrorCode.VALIDATION_FAILS, info)
+
     accept_none = False
 
 
-class IntegerValidator(Validator):
-    def validate(self, /, arg: str):
-        if arg.isdecimal():
-            return int(arg)
-        return None
+class PyTypeValidator(Validator):
+    def __init__(self, type: type, name: str) -> None:
+        self.type = type
+        self.name = name
 
-    def errormsg(self) -> str:
-        return '应为整数'
+    def _validate(self, /, arg: Any) -> Any:
+        return arg
+
+    def as_json(self) -> str:
+        return self.name
 
 
-integer = IntegerValidator()
+boolean = PyTypeValidator(bool, 'bool')
+null = PyTypeValidator(NoneType, 'null')
+
+
+class IntValidator(Validator):
+    def _validate(self, /, arg: int) -> int:
+        if not isinstance(arg, int):
+            Validator.error(self, arg)
+        if arg < 0 or arg > 0x7fffffff:
+            Validator.error(self, arg)
+        return arg
+
+    def as_json(self) -> Any:
+        return 'integer'
+
+
+class IntStringValidator(IntValidator):
+    def _validate(self, /, arg: str) -> int:
+        if not arg.isdecimal():
+            Validator.error(self, arg)
+        return super()._validate(int(arg))
+
+
+sint = IntStringValidator()
+integer = IntValidator()
 
 
 class DateValidator(Validator):
-    def validate(self, /, arg: str):
+    def _validate(self, /, arg: str) -> date:
         try:
             d = date.fromisoformat(arg)
             if d < date.today():
-                return None
+                Validator.error(self, arg)
             return d
         except ValueError:
-            return None
+            Validator.error(self, arg)
 
-    def errormsg(self) -> str:
-        return '应为日期'
+    def as_json(self) -> str:
+        return 'date'
 
 
 isodate = DateValidator()
 
 
-class LengthValidator(Validator):
-    def __init__(self, /, max: int) -> None:
+class StringValidator(Validator):
+    def __init__(self, /, min: int, max: int) -> None:
+        self.min = min
         self.max = max
 
-    def validate(self, /, arg: str):
-        if len(arg) > self.max:
-            return None
-        return arg
+    def _validate(self, /, arg: str) -> str:
+        if self.min <= len(arg) <= self.max:
+            return arg
+        Validator.error(self, arg)
 
-    def errormsg(self) -> str:
-        return f'长度不应超过{self.max}'
+    def as_json(self) -> Any:
+        return {'__string__': True, 'length': [self.min, self.max]}
+
+
+class _StringValidatorMaker:
+    def __init__(self, /, min: int, max: int) -> None:
+        self.min = min
+        self.max = max
 
 
 class lengthedstr(str):
-    def __class_getitem__(self, length: int) -> LengthValidator:
-        return LengthValidator(length)
+    def __class_getitem__(self, length: int | tuple[int, int]) -> _StringValidatorMaker:
+        match length:
+            case [min, max]:
+                return _StringValidatorMaker(min, max)
+            case _:
+                return _StringValidatorMaker(0, length)
 
 
-class BoolValidator(Validator):
-    def validate(self, /, arg: str | list[str]):
+class BoolStringValidator(Validator):
+    def _validate(self, /, arg: str) -> bool:
         return bool(arg)
 
-    def errormsg(self) -> str:
-        return '应为布尔值'
+    def as_json(self) -> Any:
+        return 'boolean'
 
     accept_none = True
 
 
-boolean = BoolValidator()
+sbool = BoolStringValidator()
 
 
-class AnyValidator(Validator):
-    def validate(self, /, arg: str):
+class DynamicValidator(Validator):
+    def _validate(self, /, arg: Any) -> Any:
         return arg
 
-    def errormsg(self) -> str:
-        return ''
+    def as_json(self) -> Any:
+        return 'any'
 
 
-any = AnyValidator()
+dynamic = DynamicValidator()
 
 
 class ListValidator(Validator):
@@ -105,57 +182,93 @@ class ListValidator(Validator):
         self.child_validator = child_validator
         self.required = required
 
-    def validate(self, /, arg: list[str]):
+    def _validate(self, /, arg: list) -> list:
         if not arg and self.required:
-            return None
+            Validator.error(self, json)
         ret = []
-        for i in arg:
-            tmp = self.child_validator.validate(i)
-            if tmp is None:
-                return None
-            ret.append(tmp)
+        for i, item in enumerate(arg):
+            with Validator.path(f'[{i}]'):
+                ret.append(self.child_validator.validate(item))
         if len(ret) != len(set(ret)):
-            return None
+            Validator.error(self, json)
         return ret
 
-    def errormsg(self) -> str:
-        return '应为列表'
+    def as_json(self) -> Any:
+        if self.required:
+            return [self.child_validator.as_json(), 'required']
+        return [self.child_validator.as_json()]
 
     def from_files(self) -> bool:
         return self.child_validator.from_files()
 
-    method = ImmutableMultiDict.getlist
+
+class _RequiredListValidatorMaker:
+    def __init__(self, /, generic_argument) -> None:
+        self.generic_argument = generic_argument
 
 
 class requiredlist(list):
-    def __class_getitem__(cls, /, child_validator: type) -> ListValidator:
-        return ListValidator(annotation2validator(child_validator), True)
+    def __class_getitem__(cls, /, generic_argument: type) -> object:
+        return _RequiredListValidatorMaker(generic_argument)
+
+
+class ObjectValidator(Validator):
+    def __init__(self, fields: dict[str, Validator]) -> None:
+        self.fields = fields
+
+    def _validate(self, /, arg: dict) -> dict:
+        ret = {}
+        for k, v in self.fields.items():
+            with Validator.path(k):
+                _arg = request.files if v.from_files() else arg
+                if isinstance(_arg, ImmutableMultiDict) and isinstance(v, ListValidator):
+                    ret[k] = v.validate(_arg.getlist(k))
+                else:
+                    ret[k] = v.validate(_arg.get(k))
+        return ret
+
+    def as_json(self):
+        return {k: v.as_json() for k, v in self.fields.items()}
 
 
 class EnumValidator(Validator):
     def __init__(self, /, enum: EnumType) -> None:
         self.enum = enum
 
-    def validate(self, /, arg: str):
-        if not arg.isnumeric():
-            return None
-        arg = int(arg)
+    def _validate(self, /, arg: Any) -> Any:
         if arg not in self.enum._value2member_map_:
-            return None
+            Validator.error(self, arg)
         return self.enum(arg)
 
-    def errormsg(self) -> str:
-        return '取值应为{}中的一个'.format(', '.join(map(str, self.enum._value2member_map_)))
+    def as_json(self) -> Any:
+        return self.enum.__name__
+
+
+class EnumStringValidator(EnumValidator):
+    def _validate(self, /, arg: str) -> Any:
+        if not arg.isdecimal():
+            Validator.error(self, arg)
+        return super()._validate(int(arg))
 
 
 class LiteralValidator(Validator):
-    def __init__(self, /, choices) -> None:
+    def __init__(self, /, choices: list[Any]) -> None:
         self.choices = choices
 
-    def validate(self, /, arg: str | list[str]):
+    def _validate(self, /, arg: Any) -> Any:
         if arg in self.choices:
             return arg
-        if arg.isnumeric():
+        Validator.error(self, arg)
+
+    def as_json(self) -> Any:
+        return {'__literal__': True, 'choices': self.choices}
+
+
+class LiteralStringValidator(LiteralValidator):
+    def _validate(self, /, arg: str) -> Any:
+        if arg in self.choices:
+            return arg
+        if arg.isdecimal():
             numeric = int(arg)
             for choice in self.choices:
                 try:
@@ -163,10 +276,7 @@ class LiteralValidator(Validator):
                         return choice
                 except (ValueError, TypeError):
                     ...
-        return None
-
-    def errormsg(self) -> str:
-        return '取值应为{}中的一个'.format(', '.join(map(str, self.choices)))
+        Validator.error(self, arg)
 
 
 class DefaultValidator(Validator):
@@ -174,13 +284,13 @@ class DefaultValidator(Validator):
         self.child_validator = child_validator
         self.default_value = default_value
 
-    def validate(self, /, arg: str | list[str]):
+    def _validate(self, /, arg: Any) -> Any:
         if arg is None:
             return self.default_value
         return self.child_validator.validate(arg)
 
-    def errormsg(self) -> str:
-        return self.child_validator.errormsg()
+    def as_json(self) -> Any:
+        return {'__default__': True, 'child': self.child_validator.as_json(), 'value': self.default_value}
 
     def from_files(self) -> bool:
         return self.child_validator.from_files()
@@ -189,11 +299,11 @@ class DefaultValidator(Validator):
 
 
 class FileValidator(Validator):
-    def validate(self, /, arg: str | list[str]):
+    def _validate(self, /, arg: FileStorage) -> FileStorage:
         return arg
 
-    def errormsg(self) -> str:
-        return ''
+    def as_json(self) -> Any: 
+        return 'file'
 
     def from_files(self) -> bool:
         return True
@@ -207,22 +317,22 @@ class Url:
         self.string = string
         self.params = params
 
+    def __call__(self, string: str) -> 'Url':
+        return Url(self.string + '/' + string.replace('_', '-'), self.params)
+
     def __getattr__(self, attr: str) -> 'Url':
-        return Url(self.string + '/' + attr.replace('_', '-'), self.params)
+        return self(attr)
 
     def __getitem__(self, index: str | tuple[str, Any]) -> 'Url':
         match index:
             case str():
-                string = '<int:{}>'.format(index)
+                string = f'<int:{index}>'
             case [index, 'str']:
-                string = '<{}>'.format(index)
+                string = f'<{index}>'
         return Url(
-            '{}/{}'.format(self.string, string),
+            f'{self.string}/{string}',
             self.params | frozenset([index])
         )
-
-    def root(self=None) -> 'Url':
-        return Url('/')
 
 
 url = Url()
@@ -232,24 +342,44 @@ class ZvmsError(Exception):
     ...
 
 
-def annotation2validator(annotation: type | Validator, default=_empty) -> Validator:
-    if isinstance(annotation, Validator):
-        ret = annotation
-    else:
-        ret = EnumValidator(annotation) if isinstance(annotation, EnumType) else {
-            bool: boolean,
-            str: any,
-            date: isodate,
-            int: integer,
-            FileStorage: file
-        }.get(
-            annotation,
-            ((lambda: ListValidator(annotation2validator(annotation.__args__[0], _empty), False))
-             if isinstance(annotation, GenericAlias) else
-             (lambda: LiteralValidator(annotation.__args__))
-             if isinstance(annotation, _LiteralGenericAlias)
-             else (lambda: any))()
-        )
+RouteMode: TypeAlias = Literal['json', 'zvms', 'toolkit']
+
+
+def annotation2validator(annotation: type | Validator, mode: RouteMode, default: Any) -> Validator:
+    match annotation:
+        case _StringValidatorMaker(min=min, max=max):
+            ret = StringValidator(min, max)
+        case _RequiredListValidatorMaker(generic_argument=generic_argument):
+            ret = ListValidator(annotation2validator(
+                generic_argument, mode, default), True)
+        case Validator():
+            ret = annotation
+        case EnumType():
+            if mode == 'json':
+                ret = EnumValidator(annotation)
+            else:
+                ret = EnumStringValidator(annotation)
+        case GenericAlias():
+            ret = ListValidator(annotation2validator(
+                *annotation.__args__, mode, default), False)
+        case _LiteralGenericAlias():
+            if mode == 'json':
+                ret = LiteralValidator(annotation.__args__)
+            else:
+                ret = LiteralStringValidator(annotation.__args__)
+        case _TypedDictMeta(__annotations__=annotations):
+            ret = ObjectValidator({
+                name: annotation2validator(ann, mode, _empty)
+                for name, ann in annotations.items()
+            })
+        case _:
+            ret = {
+                bool: boolean if mode == 'json' else sbool,
+                str: StringValidator(0, 0xffffffff),
+                date: isodate,
+                int: integer if mode == 'json' else sint,
+                FileStorage: file
+            }.get(annotation, dynamic)
     if default is _empty:
         return ret
     return DefaultValidator(ret, default)
@@ -259,37 +389,50 @@ def route(
     blueprint: Blueprint,
     url: Url,
     method: str = 'POST',
-    error_template: str = 'zvms/error.html'
+    *,
+    mode: RouteMode
 ) -> Callable[[Callable], Callable]:
+    from .util import render_template
+    if mode == 'json':
+        def error(errorn: int, kwargs=MappingProxyType({})) -> str:
+            return json.dumps({'errorn': errorn, **kwargs})
+    else:
+        def error(msg: str, kwargs=MappingProxyType({})) -> str:
+            return render_template(
+                mode + '/error.html',
+                msg=str(msg).format_map(kwargs)
+            )
+
     def deco(fn: Callable) -> Callable:
-        form_params = {
-            name: annotation2validator(param.annotation, param.default)
+        form_params = ObjectValidator({
+            name: annotation2validator(param.annotation, mode, param.default)
             for name, param in signature(fn).parameters.items()
             if name not in url.params
-        }
+        })
 
         @wraps(fn)
         def wrapper(*args, **kwargs):
             args_dict = request.form if method == 'POST' else request.args
-            form_args = {}
-            for k, v in form_params.items():
-                d = request.files if v.from_files() else args_dict
-                arg = v.__class__.method(d, k)
-                if arg is None and not v.__class__.accept_none:
-                    from .util import render_template
-                    return render_template(
-                        error_template,
-                        msg='表单校验错误: 缺少{}'.format(k)
-                    )
-                arg = v.validate(arg)
-                if arg is None:
-                    from .util import render_template
-                    return render_template(
-                        error_template,
-                        msg='表单校验错误: {} {}'.format(k, v.errormsg())
-                    )
-                form_args[k] = arg
-            return fn(*args, **kwargs, **form_args)
+            try:
+                ret = fn(*args, **kwargs, **form_params.validate(args_dict))
+                db.session.commit()
+                if isinstance(ret, Response):
+                    return ret
+                if mode == 'json':
+                    return json.dumps({
+                        'errorn': ErrorCode.NO_ERROR,
+                        'data': ret
+                    })
+                return ret
+            except NotFound:
+                raise
+            except ZvmsError as exn:
+                db.session.rollback()
+                return error(*exn.args)
+            except Exception as exn:
+                db.session.rollback()
+                logger.exception(exn)
+                abort(500)
         blueprint.add_url_rule(
             url.string,
             view_func=wrapper,
@@ -299,40 +442,17 @@ def route(
     return deco
 
 
-@overload
-def view(fn: Callable) -> Callable: ...
+zvms_route = partial(route, mode='zvms')
+toolkit_route = partial(route, mode='toolkit')
+api_route = partial(route, mode='json')
 
 
-def view(error_template: str = 'zvms/error.html') -> Callable[[Callable], Callable]:
-    if callable(error_template):
-        return view()(error_template)
-
-    def deco(fn: Callable) -> Callable:
-        @wraps(fn)
-        def wrapper(*args, **kwargs):
-            try:
-                ret = fn(*args, **kwargs)
-                db.session.commit()
-                return ret
-            except NotFound:
-                raise
-            except Exception as exn:
-                db.session.rollback()
-                logger.exception(exn)
-                from .util import render_template
-                return render_template(
-                    error_template,
-                    msg=exn.args[0] if isinstance(exn, ZvmsError)
-                    else '服务器遇到了{}错误'.format(exn.__class__.__qualname__)
-                )
-        return wrapper
-    return deco
-
-
-def login_required(fn: Callable) -> Callable:
+def login_required(fn: Callable, json: bool = False) -> Callable:
     @wraps(fn)
     def wrapper(*args, **kwargs):
         if 'userid' not in session:
+            if json:
+                abort(403)
             return redirect('/user/login?redirect_to=' + quote(request.url))
         return fn(*args, **kwargs)
     return wrapper
@@ -347,6 +467,3 @@ def permission(perm: Permission) -> Callable[[Callable], Callable]:
             abort(403)
         return wrapper
     return deco
-
-
-toolkit_view = view('toolkit/error.html')
