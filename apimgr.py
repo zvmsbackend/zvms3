@@ -148,7 +148,7 @@ def py2ts(ann: type, in_structs: bool, enable_link: bool = False) -> str:
     }[ann]
 
 
-def dump_struct(struct: TypedDict, enable_link: bool = False) -> str:
+def dumps_struct(struct: TypedDict, enable_link: bool = False) -> str:
     return """export interface {name} {{
 {fields}
 }};
@@ -162,7 +162,7 @@ def dump_struct(struct: TypedDict, enable_link: bool = False) -> str:
 
 
 def dump_structs(dst: str) -> None:
-    write_file(dst, 'import * as enum from "./enums";\n\n', '\n'.join(map(dump_struct, structs)))
+    write_file(dst, 'import * as enum from "./enums";\n\n', '\n'.join(map(dumps_struct, structs)))
     
 
 def dump_api(template_file: str, dst: str) -> None:
@@ -171,7 +171,7 @@ def dump_api(template_file: str, dst: str) -> None:
     write_file(dst, re.sub(r'//--METHODS START----[\s\S]*//--METHODS END----', '\n'.join(
 """  /**
    * {doc}
-   * ### [{method}] {url}
+   * ### [{method}] /api{url}
    * #### 权限: {permission}{comment_params}
    */
   {name}({params}): ForegroundApiRunner<{returns}> {{
@@ -180,7 +180,7 @@ def dump_api(template_file: str, dst: str) -> None:
 """.format(
         doc=api.doc or '',
         method=api.method,
-        url=api.url.string,
+        url=api.blueprint.url_prefix + api.url.string,
         permission=api.permission,
         comment_params='' if not api.total_params else '\n' + '\n'.join(
             f'   * @param {name}'
@@ -236,13 +236,13 @@ def parse_sql(sql: str):
         rows = {}
         for line in map(str.strip, re.split(r',\s*?\n', body)):
             if (m := re.match(r'FOREIGN KEY\s*\((\w+)\)\s*REFERENCES\s*(.+)', line)) is not None:
-                rows[m.group(1)][1] = f'REFERENCES {m.group(2)}'
+                rows[m.group(1)][1].append(f'REFERENCES {m.group(2)}')
             elif (m := re.match(r'PRIMARY KEY\s*\((.+)\)', line)) is not None:
                 for i in re.split(r',\s*', m.group(1)):
-                    rows[i][1] = 'PRIMARY KEY'
+                    rows[i][1].append('PRIMARY KEY')
             else:
                 name, type, *props = line.split(maxsplit=2)
-                rows[name] = [type, ''.join(props)]
+                rows[name] = [type, props]
         ret.append((tab, rows))
     return ret
 
@@ -279,7 +279,7 @@ def dump_document(dst: str) -> None:
     write_file(os.path.join(dst, 'structs.html'), render_template(
         'document/structs.html',
         data=[
-            (struct.__name__, dump_struct(struct, True))
+            (struct.__name__, dumps_struct(struct, True))
             for struct in structs
         ]
     ))

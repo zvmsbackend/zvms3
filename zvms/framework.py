@@ -389,6 +389,7 @@ def annotation2validator(annotation: type | Validator, mode: RouteMode, default:
 class Api:
     def __init__(
         self, 
+        blueprint: Blueprint,
         name: str, 
         url: Url, 
         method: Literal['GET', 'POST'],
@@ -397,6 +398,7 @@ class Api:
         params: dict[str, type], 
         returns: type
     ) -> None:
+        self.blueprint = blueprint
         self.name = name
         self.url = url
         self.method = method
@@ -460,6 +462,7 @@ def route(
 
         if mode == 'json':
             api = Api(
+                blueprint,
                 fn.__name__,
                 url,
                 method,
