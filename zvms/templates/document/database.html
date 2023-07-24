@@ -1,0 +1,28 @@
+{% extends "document/base.html" %}
+{% block container %}
+<div style="height: 100vh; overflow: auto">
+    {% for name, columns in schema %}
+    <div class="card card-body" id="{{name}}">
+        <h2 class="card-title">{{name}}</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">列名</th>
+                    <th scope="col">列类型</th>
+                    <th scope="col">属性</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for name, (type, props) in columns.items() %}
+                <tr>
+                    <td>{{name}}</td>
+                    <td>{{type}}</td>
+                    <td>{{props}}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

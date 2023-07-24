@@ -13,12 +13,12 @@ $ pip install -r requirements.txt
 1. (假设使用`litecli`):
 ```
 (none)> .open instance/zvms.db
-instance/zvms.db> source sql.sql
+instance/zvms.db> source zvms.sql
 ```
 2. 如果要从`ZVMS 2.0`中导入数据的话, 
     1. 复制2.0的`zvms.db`至根目录
     2. 检查数据库中有没有同一班中重名的情况, 如果有, 改掉
-    3. 如果旧数据库里有系统和义管会, 把`sql.sql`的最后两行去掉
+    3. 如果旧数据库里有系统和义管会, 把`zvms.sql`的最后两行去掉
     4. 运行`migrate.py`
 3. 如果要从头开始导入数据的话,
     1. 准备两份csv文件, `classes.csv`和`users.csv`, 格式分别为:

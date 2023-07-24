@@ -4,7 +4,7 @@ from typing import (
     is_typeddict,
     _LiteralGenericAlias 
 )
-from operator import itemgetter, attrgetter
+from operator import attrgetter
 from time import perf_counter
 from itertools import chain
 from enum import EnumType
@@ -229,8 +229,28 @@ def render_template(template_name: str, **context):
     )
 
 
+def parse_sql(sql: str):
+    create_stmts = re.findall(r'CREATE TABLE.*\b(\w+)\(([\s\S]+?)\);', sql)
+    ret = []
+    for tab, body in create_stmts:
+        rows = {}
+        for line in map(str.strip, re.split(r',\s*?\n', body)):
+            if (m := re.match(r'FOREIGN KEY\s*\((\w+)\)\s*REFERENCES\s*(.+)', line)) is not None:
+                rows[m.group(1)][1] = f'REFERENCES {m.group(2)}'
+            elif (m := re.match(r'PRIMARY KEY\s*\((.+)\)', line)) is not None:
+                for i in re.split(r',\s*', m.group(1)):
+                    rows[i][1] = 'PRIMARY KEY'
+            else:
+                name, type, *props = line.split(maxsplit=2)
+                rows[name] = [type, ''.join(props)]
+        ret.append((tab, rows))
+    return ret
+
+
 def dump_document(dst: str) -> None:
     app.app_context().push()
+    with open('zvms.sql', encoding='utf-8') as file:
+        sql = file.read()
     for dir in [
         dst, 
         os.path.join(dst, 'static'), 
@@ -268,6 +288,10 @@ def dump_document(dst: str) -> None:
         render_markdown=render_markdown,
         py2ts=py2ts,
         dict=dict
+    ))
+    write_file(os.path.join(dst, 'database.html'), render_template(
+        'document/database.html',
+        schema=parse_sql(sql)
     ))
 
 
