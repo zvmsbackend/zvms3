@@ -12,26 +12,22 @@ from inspect import signature, _empty
 from urllib.parse import quote
 from functools import partial
 from functools import wraps
-from types import NoneType
 from datetime import date
 from enum import EnumType
+from typing import Any
 import json
 
 from flask import Blueprint, Response, session, request, redirect, abort
 from werkzeug.datastructures import ImmutableMultiDict, FileStorage
-from werkzeug.exceptions import NotFound
+from werkzeug.exceptions import NotFound, Forbidden
 
 from .misc import db, logger, Permission, ErrorCode
-
-
-class Any:
-    def __instancecheck__(self, __instance) -> bool:
-        return True
 
 
 class Validator(metaclass=ABCMeta):
     def validate(self, /, arg: Any) -> Any:
         if not isinstance(arg, self._validate.__annotations__.get('arg')):
+            print(self, arg, self._validate.__annotations__.get('arg'))
             Validator.error(self, arg)
         return self._validate(arg)
 
@@ -65,23 +61,16 @@ class Validator(metaclass=ABCMeta):
         logger.warn(info)
         raise ZvmsError(ErrorCode.VALIDATION_FAILS, info)
 
-    accept_none = False
 
-
-class PyTypeValidator(Validator):
-    def __init__(self, type: type, name: str) -> None:
-        self.type = type
-        self.name = name
-
-    def _validate(self, /, arg: Any) -> Any:
+class BoolValidator(Validator):
+    def _validate(self, /, arg: bool) -> bool:
         return arg
+    
+    def as_json(self) -> Any:
+        return 'boolean'
+    
 
-    def as_json(self) -> str:
-        return self.name
-
-
-boolean = PyTypeValidator(bool, 'bool')
-null = PyTypeValidator(NoneType, 'null')
+boolean = BoolValidator()
 
 
 class IntValidator(Validator):
@@ -154,13 +143,11 @@ class lengthedstr(str):
 
 
 class BoolStringValidator(Validator):
-    def _validate(self, /, arg: str) -> bool:
+    def _validate(self, /, arg: str | None) -> bool:
         return bool(arg)
 
     def as_json(self) -> Any:
         return 'boolean'
-
-    accept_none = True
 
 
 sbool = BoolStringValidator()
@@ -189,7 +176,7 @@ class ListValidator(Validator):
         for i, item in enumerate(arg):
             with Validator.path(f'[{i}]'):
                 ret.append(self.child_validator.validate(item))
-        if len(ret) != len(set(ret)):
+        if len(ret) != sum(1 for i, x in enumerate(ret) if x not in ret[:i]):
             Validator.error(self, json)
         return ret
 
@@ -235,7 +222,7 @@ class EnumValidator(Validator):
     def __init__(self, /, enum: EnumType) -> None:
         self.enum = enum
 
-    def _validate(self, /, arg: Any) -> Any:
+    def _validate(self, /, arg: object) -> Any:
         if arg not in self.enum._value2member_map_:
             Validator.error(self, arg)
         return self.enum(arg)
@@ -255,7 +242,7 @@ class LiteralValidator(Validator):
     def __init__(self, /, choices: list[Any]) -> None:
         self.choices = choices
 
-    def _validate(self, /, arg: Any) -> Any:
+    def _validate(self, /, arg: object) -> Any:
         if arg in self.choices:
             return arg
         Validator.error(self, arg)
@@ -284,7 +271,7 @@ class DefaultValidator(Validator):
         self.child_validator = child_validator
         self.default_value = default_value
 
-    def _validate(self, /, arg: Any) -> Any:
+    def _validate(self, /, arg: object) -> Any:
         if arg is None:
             return self.default_value
         return self.child_validator.validate(arg)
@@ -294,8 +281,6 @@ class DefaultValidator(Validator):
 
     def from_files(self) -> bool:
         return self.child_validator.from_files()
-
-    accept_none = True
 
 
 class FileValidator(Validator):
@@ -438,7 +423,13 @@ def route(
         })
         @wraps(fn)
         def wrapper(*args, **kwargs):
-            args_dict = request.form if method == 'POST' else request.args
+            if mode == 'json':
+                try:
+                    args_dict = json.loads(request.get_data().decode())
+                except (json.decoder.JSONDecodeError, UnicodeDecodeError):
+                    args_dict = {}
+            else:
+                args_dict = request.form if method == 'POST' else request.args
             try:
                 ret = fn(*args, **kwargs, **form_params.validate(args_dict))
                 db.session.commit()
@@ -450,7 +441,7 @@ def route(
                         'data': ret
                     })
                 return ret
-            except NotFound:
+            except (NotFound, Forbidden):
                 raise
             except ZvmsError as exn:
                 db.session.rollback()
@@ -502,6 +493,9 @@ def login_required(fn: Callable, json: bool = False) -> Callable:
             return redirect('/user/login?redirect_to=' + quote(request.url))
         return fn(*args, **kwargs)
     return wrapper
+
+
+api_login_required = partial(login_required, json=True)
 
 
 def permission(perm: Permission) -> Callable[[Callable], Callable]:

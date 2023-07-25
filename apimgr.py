@@ -29,7 +29,7 @@ from zvms.api import Api as ApiBlueprint
 from zvms import misc, app
 
 
-def write_file(filename: str, *content):
+def write_file(filename: str, *content) -> None:
     with open(filename, 'w', encoding='utf-8') as file:
         file.write(str.join('', content))
     print(os.path.realpath(filename), '生成完成')
@@ -219,7 +219,7 @@ _structs_names = list(map(attrgetter('__name__'), structs))
 blueprints = [b for b, _ in ApiBlueprint._blueprints]
 
 
-def render_template(template_name: str, **context):
+def render_template(template_name: str, **context) -> str:
     return _render_template(
         template_name,
         enums=_enums_names,
@@ -229,7 +229,7 @@ def render_template(template_name: str, **context):
     )
 
 
-def parse_sql(sql: str):
+def parse_sql(sql: str) -> list[tuple[str, dict[str, list[str]]]]:
     create_stmts = re.findall(r'CREATE TABLE.*\b(\w+)\(([\s\S]+?)\);', sql)
     ret = []
     for tab, body in create_stmts:
@@ -286,6 +286,7 @@ def dump_document(dst: str) -> None:
     write_file(os.path.join(dst, 'blueprints.html'), render_template(
         'document/blueprints.html',
         render_markdown=render_markdown,
+        snake2camel=snake2camel,
         py2ts=py2ts,
         dict=dict
     ))
@@ -295,17 +296,17 @@ def dump_document(dst: str) -> None:
     ))
 
 
-def main():
+def main() -> None:
     try:
         with open('apimgr.json', encoding='utf-8') as file:
             cfg = argparse.Namespace(**json.load(file))
     except OSError:
         parser = argparse.ArgumentParser()
-        parser.add_argument('-e', '--enum', required=True)
-        parser.add_argument('-a', '--api', required=True)
-        parser.add_argument('-s', '--struct', required=True)
-        parser.add_argument('-t', '--api-template', required=True)
-        parser.add_argument('-d', '--doc', required=True)
+        parser.add_argument('-e', '--enum', required=True, help='枚举.ts文件的输出路径')
+        parser.add_argument('-s', '--struct', required=True, help='接口.ts文件的输出路径')
+        parser.add_argument('-a', '--api', required=True, help='API.ts文件的输出路径')
+        parser.add_argument('-t', '--api-template', required=True, help='API模板的路径')
+        parser.add_argument('-d', '--doc', required=True, help='HTML文档的输出文件夹')
         cfg = parser.parse_args()
     dump_enum(cfg.enum)
     dump_api(cfg.api_template, cfg.api)

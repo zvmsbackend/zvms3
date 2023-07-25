@@ -5,7 +5,7 @@ from flask import Blueprint, session
 from ..framework import (
     lengthedstr,
     ZvmsError,
-    login_required,
+    api_login_required,
     permission,
     api_route,
     url
@@ -69,7 +69,7 @@ class IssueInfo(TypedDict):
 
 
 @api_route(Issue, url.list, 'GET')
-@login_required
+@api_login_required
 @permission(Permission.MANAGER)
 def list_issues() -> list[IssueInfo]:
     """列出所有的反馈"""
@@ -87,7 +87,7 @@ class MyIssues(TypedDict):
 
 
 @api_route(Issue, url.me, 'GET')
-@login_required
+@api_login_required
 def my_issues() -> MyIssues:
     """
 列出自己提交的反馈  
@@ -101,7 +101,7 @@ def my_issues() -> MyIssues:
 
 
 @api_route(Issue, url.post)
-@login_required
+@api_login_required
 def post_issue(content: lengthedstr[64]) -> None:
     """提交一条反馈"""
     Api.post_issue(content)

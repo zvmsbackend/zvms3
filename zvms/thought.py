@@ -164,6 +164,7 @@ def edit_thought(
     files = [
         (file.filename, file.read())
         for file in files
+        if file.filename
     ]
     ThoughtApi.edit_thought(
         volid,
@@ -189,7 +190,7 @@ def first_audit(volid: int, userid: int):
 @permission(Permission.AUDITOR | Permission.MANAGER)
 def accept_thought(volid: int, userid: int, reward: int):
     ThoughtApi.accept_thought(volid, userid, reward)
-    return redirect(f'/thought/{volid}/{userid}'.format(volid, userid))
+    return redirect(f'/thought/{volid}/{userid}')
 
 
 @zvms_route(Thought, url['volid']['userid'].audit.final.reject)

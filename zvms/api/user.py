@@ -5,7 +5,7 @@ from flask import Blueprint, session, abort
 from ..framework import (
     lengthedstr,
     ZvmsError,
-    login_required,
+    api_login_required,
     api_route,
     url
 )
@@ -92,12 +92,12 @@ class Api:
             case None:
                 abort(404)
             case [name]: ...
-        members = execute_sql(
+        members = list(map(tuple, execute_sql(
             'SELECT userid, username '
             'FROM user '
             'WHERE classid = :classid',
             classid=classid
-        ).fetchall()
+        ).fetchall()))
         return name, members
 
 
@@ -124,15 +124,15 @@ class UserInfo(TypedDict):
     className: str
 
 
-@api_route(User, url['userid'])
-@login_required
+@api_route(User, url['userid'], 'GET')
+@api_login_required
 def get_user_info(userid: int) -> UserInfo:
     """获取用户信息"""
     return dump_object(Api.user_info(userid), UserInfo)
 
 
 @api_route(User, url.modify_password)
-@login_required
+@api_login_required
 def modify_password(
     target: int, 
     oldPassword: lengthedstr[32, 32], 
@@ -151,7 +151,7 @@ class ClassIdAndName(TypedDict):
 
 
 @api_route(User, url('class').list, 'GET')
-@login_required
+@api_login_required
 def list_classes() -> list[ClassIdAndName]:
     """获取班级列表"""
     return dump_objects(Api.get_classes(), ClassIdAndName)
@@ -168,11 +168,11 @@ class ClassInfo(TypedDict):
 
 
 @api_route(User, url('class')['classid'], 'GET')
-@login_required
+@api_login_required
 def get_class_info(classid: int) -> ClassInfo:
     """获取班级信息"""
     name, members = Api.class_info(classid)
     return {
         'name': name,
-        'members': dump_object(members, UserIdAndName)
+        'members': dump_objects(members, UserIdAndName)
     }

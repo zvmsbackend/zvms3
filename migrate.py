@@ -4,7 +4,7 @@ import sqlite3
 import os.path
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--old-database-path',
                         default='zvms.db', help='旧数据库的路径')

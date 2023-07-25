@@ -15,9 +15,9 @@
             <tbody>
                 {% for name, (type, props) in columns.items() %}
                 <tr>
-                    <td><pre>{{name}}</pre></td>
-                    <td><pre>{{type}}</pre></td>
-                    <td><pre>{{' '.join(props)}}</pre></td>
+                    <td><code>{{name}}</code></td>
+                    <td><code>{{type}}</code></td>
+                    <td><code>{{' '.join(props)}}</code></td>
                 </tr>
                 {% endfor %}
             </tbody>

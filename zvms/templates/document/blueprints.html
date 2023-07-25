@@ -1,14 +1,14 @@
 {% extends "document/base.html" %}
 {% block container %}
 <div class="row">
-    <div class="col-3">
+    <div class="col-3" style="height: 100vh; overflow: auto">
         <nav id="navbar-example3" class="h-100 flex-column align-items-stretch pe-4 border-end">
             <nav class="nav nav-pills flex-column">
                 {% for blueprint in blueprints %}
                 <a class="nav-link" href="#{{blueprint.name}}">{{blueprint.name}}</a>
                 <nav class="nav nav-pills flex-column">
                     {% for api in blueprint.__apis__ %}
-                    <a class="nav-link ms-3 my-1" href="#{{blueprint.name}}-{{api.name}}">{{api.name}}</a>
+                    <a class="nav-link ms-3 my-1" href="#{{blueprint.name}}-{{api.name}}"><pre>{{snake2camel(api.name)}}</pre></a>
                     {% endfor %}
                 </nav>
                 {% endfor %}
@@ -23,7 +23,7 @@
             <p>URL前缀: /api{{blueprint.url_prefix}}</p>
             {% for api in blueprint.__apis__ %}
             <div id="{{blueprint.name}}-{{api.name}}" class="card card-body">
-                <h4 class="card-title">{{api.name}}</h4>
+                <h4 class="card-title">{{snake2camel(api.name)}}</h4>
                 <p class="card-text text-center">
                     {{render_markdown(api.doc)|safe}}
                 </p>
@@ -40,8 +40,8 @@
                     <tbody>
                         {% for name, ann in api.total_params.__or__(dict(return=api.returns)).items() %}
                         <tr>
-                            <td>{{name}}{{'(URL参数)' if name in api.url.params}}</td>
-                            <td>{{py2ts(ann, False, True)|safe}}</td>
+                            <td><code>{{name}}</code>{{'(URL参数)' if name in api.url.params}}</td>
+                            <td><code>{{py2ts(ann, False, True)|safe}}</code></td>
                         </tr>
                         {% endfor %}
                     </tbody>

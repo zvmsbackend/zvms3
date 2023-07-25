@@ -72,7 +72,10 @@ def send_notice(
 def edit_notices_get():
     return render_template(
         'zvms/edit_notices.html',
-        notices=NoticeApi.list_notices()
+        notices=[
+            (*spam, list(enumerate(targets)))
+            for *spam, targets in NoticeApi.list_notices()
+        ]
     )
 
 

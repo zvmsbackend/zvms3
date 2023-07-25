@@ -1,4 +1,4 @@
-from typing import _TypedDictMeta
+from typing import _TypedDictMeta, Iterable, Any
 from datetime import datetime, date
 from random import choice
 import hashlib
@@ -29,7 +29,7 @@ def inexact_now() -> datetime:
     return datetime.now().replace(microsecond=0)
 
 
-def username2userid(usernames: list[str]) -> list[int]:
+def username2userid(usernames: Iterable[str]) -> list[int]:
     ret = []
     for username in usernames:
         match execute_sql(
@@ -46,11 +46,11 @@ def username2userid(usernames: list[str]) -> list[int]:
     return ret
 
 
-def get_primary_key():
-    return execute_sql('SELECT LAST_INSERT_ROWID()').fetchone()
+def get_primary_key() -> int:
+    return execute_sql('SELECT LAST_INSERT_ROWID()').fetchone()[0]
 
 
-def render_template(template_name: str, **context):
+def render_template(template_name: str, **context) -> str:
     return _render_template(
         template_name,
         **context,
@@ -83,7 +83,7 @@ def get_user_scores(userid: int) -> dict[int, int]:
     ).fetchall())
 
 
-def three_days_later():
+def three_days_later() -> date:
     today = date.today()
     return today.replace(day=today.day + 3)
 
@@ -96,7 +96,7 @@ def send_notice_to(title: str, content: str, target: int, class_notice: bool = F
         content=content,
         expire=three_days_later()
     )
-    noticeid = get_primary_key()[0]
+    noticeid = get_primary_key()
     execute_sql(
         'INSERT INTO {}({}, noticeid) '
         'VALUES(:target, :noticeid)'.format(
@@ -108,7 +108,7 @@ def send_notice_to(title: str, content: str, target: int, class_notice: bool = F
     )
 
 
-def random_color():
+def random_color() -> str:
     return choice([
         'primary',
         'secondary',
@@ -130,9 +130,9 @@ def pagination(page: int, total: int) -> range:
     return range(max(page - 1, 0), min((total - 1) // 10 + 1, page + 5))
 
 
-def dump_objects(result: list[tuple], cls: _TypedDictMeta) -> list[dict]:
+def dump_objects(result: Iterable[tuple], cls: _TypedDictMeta) -> list[dict]:
     return [dump_object(row, cls) for row in result]
 
 
-def dump_object(row: tuple, cls: _TypedDictMeta) -> dict:
+def dump_object(row: tuple, cls: _TypedDictMeta) -> dict[str, Any]:
     return dict(zip(cls.__annotations__, row))

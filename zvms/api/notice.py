@@ -7,7 +7,7 @@ from ..misc import Permission, ErrorCode
 from ..framework import (
     lengthedstr,
     ZvmsError,
-    login_required,
+    api_login_required,
     permission,
     api_route,
     url
@@ -16,6 +16,7 @@ from ..util import (
     username2userid,
     get_primary_key,
     dump_objects,
+    dump_object,
     execute_sql
 )
 from .user import UserIdAndName
@@ -59,7 +60,7 @@ class Api:
             sender=sender,
             expire=expire
         )
-        noticeid = get_primary_key()[0]
+        noticeid = get_primary_key()
         for userid in userids:
             execute_sql(
                 'INSERT INTO user_notice(userid, noticeid) '
@@ -95,7 +96,7 @@ class Api:
         str, # 过期时间
         int, # 发送者ID
         str, # 发送者用户名
-        list[int, str] # 目标
+        list[tuple[int, str]] # 目标
     ]]:
         return [
             (id, title, content, expire, senderid, sender, targets)
@@ -109,13 +110,13 @@ class Api:
                 ),
                 sender=session.get('userid')
             ).fetchall()
-            if (targets := list(enumerate(execute_sql(
+            if (targets := execute_sql(
                 'SELECT user.userid, user.username '
                 'FROM user_notice AS un '
                 'JOIN user ON user.userid = un.userid '
                 'WHERE noticeid = :noticeid',
                 noticeid=id
-            ))) if not school else []) or True
+            ).fetchall() if not school else []) or True
         ]
 
     @staticmethod
@@ -183,17 +184,17 @@ class NoticeInfo(TypedDict):
 
 
 @api_route(Notice, url.list, 'GET')
-@login_required
+@api_login_required
 @permission(Permission.MANAGER)
 def list_notices() -> list[NoticeInfo]:
     """
 列出所有通知  
 用于管理员的编辑通知功能
     """
-    *spam, targets = Api.list_notices()
-    return dump_objects(spam, NoticeInfo) | {
-        'targets': dump_objects(targets, UserIdAndName)
-    }
+    return [
+        dump_object(spam, NoticeInfo) | {'targets': dump_objects(targets, UserIdAndName)}
+        for *spam, targets in Api.list_notices()
+    ]
 
 
 class MyNotice(TypedDict):
@@ -206,14 +207,14 @@ class MyNotice(TypedDict):
 
 
 @api_route(Notice, url.me, 'GET')
-@login_required
+@api_login_required
 def my_notices() -> list[MyNotice]:
     """列出一个人所能看到的所有通知"""
     return dump_objects(Api.my_notices(), MyNotice)
 
 
 @api_route(Notice, url.send)
-@login_required
+@api_login_required
 @permission(Permission.MANAGER)
 def send_notice(
     title: lengthedstr[32],
@@ -233,7 +234,7 @@ def send_notice(
 
 
 @api_route(Notice, url.send.school)
-@login_required
+@api_login_required
 @permission(Permission.MANAGER)
 def send_school_notice(
     title: lengthedstr[32], 

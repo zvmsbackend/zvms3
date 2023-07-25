@@ -11,7 +11,7 @@ def generate_password(length: int) -> str:
     return md5.hexdigest()[:length]
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--classes',
                         default='classes.csv', help='班级的csv文件')

@@ -1,13 +1,12 @@
-from typing import Literal
+from typing import Literal, Callable
 from operator import itemgetter
 from urllib.parse import quote
+from functools import partial
 from datetime import date
 
 from flask import (
     Blueprint,
     redirect,
-    abort,
-    session
 )
 
 from .framework import (
@@ -173,7 +172,7 @@ def create_appointed_volunteer(
         reward,
         participants
     )
-    return redirect('/volunteer/{}'.format(volid))
+    return redirect(f'/volunteer/{volid}')
 
 
 @zvms_route(Volunteer, url['volid'].audit)
@@ -184,7 +183,7 @@ def audit_volunteer(
     status: Literal[VolStatus.ACCEPTED, VolStatus.REJECTED]
 ):
     VolApi.audit_volunteer(volid, status)
-    return redirect('/volunteer/{}'.format(volid))
+    return redirect(f'/volunteer/{volid}')
 
 
 @zvms_route(Volunteer, url.create.special, 'GET')
@@ -194,6 +193,31 @@ def create_special_volunteer_get():
     return render_template('zvms/volunteer/create_special.html')
 
 
+def special_volunteer_helper(
+    name: str,
+    type: VolType,
+    rewards: list[str], 
+    participants: list[str], 
+    method: Callable[[str, str, int, list[str]], int | None], 
+    method_ex: Callable[[str, str, list[tuple[str, int]]], int | None]
+) -> int | None:
+    decimal_rewards = list(filter(str.isdecimal, rewards))
+    if len(decimal_rewards) == 1:
+        return method(
+            name,
+            type,
+            int(decimal_rewards[0]),
+            participants
+        )
+    elif len(decimal_rewards) == len(participants):
+        return method_ex(
+            name,
+            type,
+            list(zip(participants, map(int, rewards)))
+        )
+    else:
+        raise ZvmsError('表单校验错误')
+
 @zvms_route(Volunteer, url.create.special)
 @login_required
 def create_special_volunteer(
@@ -202,20 +226,23 @@ def create_special_volunteer(
     rewards: requiredlist[str],
     participants: requiredlist[str]
 ):
-    volid = VolApi.create_special_volunteer(
-        name,
-        type,
-        rewards,
-        participants
-    )
-    return redirect('/volunteer/{}'.format(volid))
+    return redirect('/volunteer/{}'.format(
+        special_volunteer_helper(
+            name,
+            type,
+            rewards,
+            participants,
+            VolApi.create_special_volunteer,
+            VolApi.create_special_volunteer_ex
+        )
+    ))
 
 
 @zvms_route(Volunteer, url['volid'].signup)
 @login_required
 def signup_volunteer(volid: int):
     VolApi.signup_volunteer(volid)
-    return redirect('/volunteer/{}'.format(volid))
+    return redirect(f'/volunteer/{volid}')
 
 
 @zvms_route(Volunteer, url['volid'].signup.rollback)
@@ -230,7 +257,7 @@ def rollback_volunteer_signup(volid: int, userid: int):
 @permission(Permission.CLASS)
 def accept_volunteer_signup(volid: int, userid: int):
     VolApi.accept_volunteer_signup(volid, userid)
-    return redirect('/volunteer/{}'.format(volid))
+    return redirect(f'/volunteer/{volid}')
 
 
 @zvms_route(Volunteer, url['volid'].delete)
@@ -294,12 +321,13 @@ def modify_volunteer_special(
     rewards: requiredlist[str],
     participants: requiredlist[str]
 ):
-    VolApi.modify_special_volunteer(
-        volid,
+    special_volunteer_helper(
         name,
         type,
         rewards,
-        participants
+        participants,
+        partial(VolApi.modify_special_volunteer, volid),
+        partial(VolApi.modify_special_volunteer_ex, volid)
     )
     return redirect(f'/volunteer/{volid}')
 

@@ -5,7 +5,7 @@ from flask import Blueprint, session
 
 from ..framework import (
     ZvmsError,
-    login_required,
+    api_login_required,
     permission,
     api_route,
     url
@@ -60,7 +60,7 @@ class Api:
 
 
 @api_route(Admin, url.permission)
-@login_required
+@api_login_required
 @permission(Permission.ADMIN)
 def alter_permission(userident: str, perm: list[int]) -> None:
     """修改他人权限"""
@@ -68,7 +68,7 @@ def alter_permission(userident: str, perm: list[int]) -> None:
 
 
 @api_route(Admin, url.login)
-@login_required
+@api_login_required
 @permission(Permission.ADMIN)
 def admin_login(userident: str) -> None:
     """登录他人账号"""

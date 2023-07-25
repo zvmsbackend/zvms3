@@ -6,7 +6,7 @@ from flask import Blueprint, abort, session
 
 from ..framework import (
     ZvmsError,
-    login_required,
+    api_login_required,
     permission,
     api_route,
     url
@@ -381,7 +381,7 @@ def select_thoughts(result: SelectResult) -> SelectThoughts:
 
 
 @api_route(Thought, url.list['page'], 'GET')
-@login_required
+@api_login_required
 @permission(Permission.MANAGER | Permission.AUDITOR)
 def list_thoughts(page: int) -> SelectThoughts:
     """列出感想(普通用户不能看)"""
@@ -389,14 +389,14 @@ def list_thoughts(page: int) -> SelectThoughts:
 
 
 @api_route(Thought, url.me['page'], 'GET')
-@login_required
+@api_login_required
 def my_thoughts(page: int) -> SelectThoughts:
     """与自己有关的感想"""
     return select_thoughts(Api.my_thoughts(page))
 
 
 @api_route(Thought, url.unaudited['page'], 'GET')
-@login_required
+@api_login_required
 @permission(Permission.MANAGER | Permission.AUDITOR)
 def unaudited_thoughts(page: int) -> SelectThoughts:
     """
@@ -413,15 +413,20 @@ class ThoughtInfo(TypedDict):
     volName: str
     type: VolType
     status: ThoughtStatus
+    thought: str
     reward: int
     expectedReward: int
     pictures: list[str]
 
 
 @api_route(Thought, url['volid']['userid'], 'GET')
-@login_required
+@api_login_required
 def get_thought_info(volid: int, userid: int) -> ThoughtInfo:
-    return dump_object(Api.thought_info(volid, userid), ThoughtInfo)
+    """获取感想信息"""
+    *spam, pictures = Api.thought_info(volid, userid)
+    return dump_object(spam, ThoughtInfo) | {
+        'pictures': pictures
+    }
 
 
 class Picture(TypedDict):
@@ -436,12 +441,12 @@ class ThoughtEditingPreparation(TypedDict):
     pictures: list[Picture]
 
 
-@api_route(Thought, url['volid']['userid'], 'GET')
-@login_required
+@api_route(Thought, url['volid']['userid'].edit.prepare, 'GET')
+@api_login_required
 def prepare_edit_thought(volid: int, userid: int) -> ThoughtEditingPreparation:
     """获取编辑感想所需的信息"""
     *spam, pictures = Api.prepare_edit_thought(volid, userid)
-    dump_object(spam, ThoughtEditingPreparation) | {
+    return dump_object(spam, ThoughtEditingPreparation) | {
         'pictures': dump_objects(pictures, Picture)
     }
 
@@ -452,14 +457,16 @@ class File(TypedDict):
 
 
 @api_route(Thought, url['volid']['userid'].edit)
-@login_required
+@api_login_required
 def edit_thought(
     volid: int,
     userid: int,
     thought: str,
+    submit: bool,
     pictures: list[str],
     files: list[File]
 ) -> None:
+    """编辑感想"""
     _files = []
     for filename, data in files:
         try:
@@ -471,33 +478,38 @@ def edit_thought(
         userid,
         thought,
         pictures,
-        _files
+        _files,
+        submit
     )
 
 
 @api_route(Thought, url['volid']['userid'].audit.first)
-@login_required
+@api_login_required
 @permission(Permission.CLASS)
 def first_audit(volid: int, userid: int) -> None:
+    """初审感想(团支书)"""
     Api.first_audit(volid, userid)
 
 
 @api_route(Thought, url['volid']['userid'].audit.accept)
-@login_required
+@api_login_required
 @permission(Permission.AUDITOR | Permission.MANAGER)
 def accept_thought(volid: int, userid: int, reward: int) -> None:
+    """接受感想"""
     Api.accept_thought(volid, userid, reward)
 
 
 @api_route(Thought, url['volid']['userid'].audit.reject)
-@login_required
+@api_login_required
 @permission(Permission.AUDITOR | Permission.MANAGER)
 def reject_thought(volid: int, userid: int) -> None:
+    """拒绝感想(不可重新提交)"""
     Api.reject_thought(volid, userid)
 
 
 @api_route(Thought, url['volid']['userid'].audit.pitchback)
-@login_required
+@api_login_required
 @permission(Permission.AUDITOR | Permission.MANAGER)
 def pitchback_thought(volid: int, userid: int) -> None:
+    """打回感想"""
     Api.pitchback_thought(volid, userid)

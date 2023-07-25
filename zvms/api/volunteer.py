@@ -1,4 +1,4 @@
-from typing import TypeAlias, Literal, TypedDict
+from typing import TypeAlias, Literal, TypedDict, Iterable
 from operator import itemgetter
 from datetime import date
 
@@ -8,7 +8,7 @@ from ..framework import (
     requiredlist,
     lengthedstr,
     ZvmsError,
-    login_required,
+    api_login_required,
     permission,
     api_route,
     url
@@ -94,7 +94,7 @@ class Api:
         ).fetchone()[0]
     
     @staticmethod
-    def search_volunteers(name: str, page: int = 0) -> SelectResult:
+    def search_volunteers(name: str, page: int) -> SelectResult:
         return Api._select_volunteers(
             'WHERE name LIKE :name',
             {
@@ -220,7 +220,7 @@ class Api:
             reward=reward,
             time=time
         )
-        volid = get_primary_key()[0]
+        volid = get_primary_key()
         Api._volunteer_helper_post(volid, classes)
         for cls, max in classes:
             send_notice_to(
@@ -237,7 +237,7 @@ class Api:
         description: str,
         type: Literal[VolType.INSIDE, VolType.OUTSIDE],
         reward: int,
-        participants: list[str]
+        participants: Iterable[str]
     ) -> int:
         userids = username2userid(participants)
         status = VolStatus.UNAUDITED
@@ -258,7 +258,7 @@ class Api:
             type=type,
             reward=reward
         )
-        volid = get_primary_key()[0]
+        volid = get_primary_key()
         for userid in userids:
             execute_sql(
                 'INSERT INTO user_vol(userid, volid, status, thought, reward) '
@@ -296,7 +296,7 @@ class Api:
         ).fetchone():
             case None:
                 abort(404)
-            case [*_, status] if status != VolStatus.UNAUDITED:
+            case [*_, s] if s != VolStatus.UNAUDITED:
                 raise ZvmsError(ErrorCode.CANT_AUDIT_VOLUNTEER)
             case [name, holder, _]: ...
         execute_sql(
@@ -330,45 +330,14 @@ class Api:
                     f'你报名的义工[{name}](/volunteer/{volid})已过审, 可以填写感想',
                     participant
                 )
-        
-    @staticmethod
-    def _special_volunteer_helper_pre(
-        rewards: list[str], 
-        participants: list[str]
-    ) -> None:
-        if len(rewards) != len(participants):
-            raise ZvmsError(ErrorCode.VALIDATION_FAILS)
-        if all(map(str.isnumeric, rewards)):
-            rewards[:] = list(map(int, rewards))
-        elif (reward := next(filter(str.isnumeric, rewards), None)) is not None:
-            rewards[:] = [int(reward)] * len(rewards)
-        else:
-            raise ZvmsError(ErrorCode.VALIDATION_FAILS)
-        
-    @staticmethod
-    def _special_volunteer_helper_post(
-        volid: int, 
-        rewards: list[int], 
-        userids: list[int]
-    ) -> None:
-        for userid, reward in zip(userids, rewards):
-            execute_sql(
-                'INSERT INTO user_vol(userid, volid, status, thought, reward) '
-                'VALUES(:userid, :volid, :status, "", :reward)',
-                userid=userid,
-                volid=volid,
-                status=ThoughtStatus.ACCEPTED,
-                reward=reward
-            )
 
     @staticmethod
     def create_special_volunteer(
         name: str,
         type: VolType,
-        rewards: list[str],
-        participants: list[str]
+        reward: int,
+        participants: Iterable[str]
     ) -> int:
-        Api._special_volunteer_helper_pre(rewards, participants)
         userids = username2userid(participants)
         execute_sql(
             'INSERT INTO volunteer(name, description, status, holder, time, type, reward) '
@@ -377,22 +346,57 @@ class Api:
             status=VolStatus.SPECIAL,
             holder=session.get('userid'),
             type=type,
-            reward=0
+            reward=reward
         )
-        volid = get_primary_key()[0]
-        Api._special_volunteer_helper_post(volid, rewards, userids)
-        for participant, reward in zip(userids, rewards):
+        volid = get_primary_key()
+        for userid in userids:
+            execute_sql(
+                'INSERT INTO user_vol(userid, volid, status, thought, reward) '
+                'VALUES(:userid, :volid, :status, "", :reward)',
+                userid=userid,
+                volid=volid,
+                status=ThoughtStatus.ACCEPTED,
+                reward=reward
+            )
             send_notice_to(
                 '获得时间',
-                '你由于[{}](/volunteer/{})获得了{}{}时间'.format(
-                    name,
-                    volid,
-                    type,
-                    reward
-                ),
-                participant
+                f'你由于[{name}](/volunteer/{volid})获得了{type}{reward}时间',
+                userid
             )
         return volid
+    
+    @staticmethod
+    def create_special_volunteer_ex(
+        name: str,
+        type: VolType,
+        participants: list[tuple[str, int]]
+    ) -> None:
+        userids = username2userid(map(itemgetter(0), participants))
+        execute_sql(
+            'INSERT INTO volunteer(name, description, status, holder, time, type, reward) '
+            'VALUES(:name, :name, :status, :holder, DATE("NOW"), :type, 0)',
+            name=name,
+            status=VolStatus.SPECIAL,
+            holder=session.get('userid'),
+            type=type
+        )
+        volid = get_primary_key()
+        for userid, reward in zip(userids, map(itemgetter(1), participants)):
+            execute_sql(
+                'INSERT INTO user_vol(userid, volid, status, thought, reward) '
+                'VALUES(:userid, :volid, :status, "", :reward)',
+                userid=userid,
+                volid=volid,
+                status=ThoughtStatus.ACCEPTED,
+                reward=reward
+            )
+            send_notice_to(
+                '获得时间',
+                f'你由于[{name}](/volunteer/{volid})获得了{type}{reward}时间',
+                userid
+            )
+        return volid
+        
     
     @staticmethod
     def signup_volunteer(volid: int) -> None:
@@ -426,6 +430,11 @@ class Api:
         Api._test_signup(userid, volid)
         execute_sql(
             'DELETE FROM user_vol WHERE userid = :userid AND volid = :volid',
+            userid=userid,
+            volid=volid
+        )
+        execute_sql(
+            'DELETE FROM picture WHERE volid = :volid AND userid = :userid',
             userid=userid,
             volid=volid
         )
@@ -549,12 +558,10 @@ class Api:
         volid: int,
         name: str,
         type: VolType,
-        rewards: list[str],
+        reward: int,
         participants: list[str]
     ) -> None:
         Api._test_vol(volid, VolKind.SPECIAL)
-        Api._special_volunteer_helper_pre(rewards, participants)
-        userids = username2userid(participants)
         userids = username2userid(participants)
         execute_sql(
             'UPDATE volunteer '
@@ -569,7 +576,48 @@ class Api:
             'WHERE volid = :volid',
             volid=volid
         )
-        Api._special_volunteer_helper_post(volid, rewards, userids)
+        for userid in userids:
+            execute_sql(
+                'INSERT INTO user_vol(userid, volid, status, thought, reward) '
+                'VALUES(:userid, :volid, :status, "", :reward)',
+                userid=userid,
+                volid=volid,
+                status=ThoughtStatus.ACCEPTED,
+                reward=reward
+            )
+        
+    
+    @staticmethod
+    def modify_special_volunteer_ex(
+        volid: int,
+        name: str,
+        type: VolType,
+        participants: list[tuple[str, int]]
+    ) -> None:
+        Api._test_vol(volid, VolKind.SPECIAL)
+        userids = username2userid(map(itemgetter(0), participants))
+        execute_sql(
+            'UPDATE volunteer '
+            'SET name = :name, description = :name, type = :type '
+            'WHERE id = :volid',
+            volid=volid,
+            name=name,
+            type=type
+        )
+        execute_sql(
+            'DELETE FROM user_vol '
+            'WHERE volid = :volid',
+            volid=volid
+        )
+        for userid, reward in zip(userids, map(itemgetter(1), participants)):
+            execute_sql(
+                'INSERT INTO user_vol(userid, volid, status, thought, reward) '
+                'VALUES(:userid, :volid, :status, "", :reward)',
+                userid=userid,
+                volid=volid,
+                status=ThoughtStatus.ACCEPTED,
+                reward=reward
+            )
 
     @staticmethod
     def modify_volunteer(
@@ -606,7 +654,7 @@ class Api:
         description: str,
         type: Literal[VolType.INSIDE, VolType.OUTSIDE],
         reward: int,
-        participants: list[str]
+        participants: Iterable[str]
     ) -> None:
         status = Api._test_vol(volid, VolKind.APPOINTED)
         userids = set(username2userid(participants))
@@ -665,22 +713,22 @@ def select_volunteers(result: SelectResult) -> SelectVolunteers:
     }
 
 
-@api_route(Volunteer, url.search['name']['page'], 'GET')
-@login_required
+@api_route(Volunteer, url.search['name', 'string']['page'], 'GET')
+@api_login_required
 def search_volunteers(name: str, page: int) -> SelectVolunteers:
     """搜索义工"""
     return select_volunteers(Api.search_volunteers(name, page))
 
 
 @api_route(Volunteer, url.list['page'], 'GET')
-@login_required
+@api_login_required
 def list_volunteers(page: int) -> SelectVolunteers:
     """列出所有义工"""
     return select_volunteers(Api.list_volunteers(page))
 
 
 @api_route(Volunteer, url.me['page'], 'GET')
-@login_required
+@api_login_required
 def my_volunteers(page: int) -> SelectVolunteers:
     """列出和自己有关的义工"""
     return select_volunteers(Api.my_volunteers(page))
@@ -706,20 +754,13 @@ class VolunteerInfo(TypedDict):
 
 
 @api_route(Volunteer, url['volid'], 'GET')
-@login_required
+@api_login_required
 def get_volunteer_info(volid: int) -> VolunteerInfo:
     """获取义工信息"""
     *spam, participants, signups = Api.volunteer_info(volid)
     return dump_object(spam, VolunteerInfo) | {
-        'participants': dump_objects(participants, [
-            'userid',
-            'username',
-            'thoughtVisible'
-        ]),
-        'signups': dump_objects(signups, [
-            'userid',
-            'username'
-        ])
+        'participants': dump_objects(participants, Participant),
+        'signups': dump_objects(signups, UserIdAndName)
     }
 
 
@@ -728,15 +769,12 @@ class Class(TypedDict):
     max: int
 
 
-def flatten_json_classes(classes: list[Class]):
-    return [
-        (cls['id'], cls['max'])
-        for cls in classes
-    ]
+def flatten_json_classes(classes: list[Class]) -> list[tuple]:
+    return list(map(itemgetter('id', 'max'), classes))
 
 
 @api_route(Volunteer, url.create)
-@login_required
+@api_login_required
 @permission(Permission.MANAGER)
 def create_volunteer(
     name: lengthedstr[32], 
@@ -756,7 +794,7 @@ def create_volunteer(
 
 
 @api_route(Volunteer, url.create.appointed)
-@login_required
+@api_login_required
 def create_appointed_volunteer(
     name: str,
     description: str,
@@ -775,7 +813,7 @@ def create_appointed_volunteer(
 
 
 @api_route(Volunteer, url['volid'].audit)
-@login_required
+@api_login_required
 @permission(Permission.CLASS)
 def audit_volunteer(
     volid: int, 
@@ -785,40 +823,61 @@ def audit_volunteer(
     Api.audit_volunteer(volid, status)
 
 
+class ParticipantWithReward(TypedDict):
+    userident: str
+    reward: int
+
+
 @api_route(Volunteer, url.create.special)
-@login_required
+@api_login_required
 @permission(Permission.MANAGER)
 def create_special_volunteer(
     name: str,
     type: VolType,
-    rewards: list[str],
+    reward: int,
     participants: list[str]
 ) -> None:
     """创建特殊义工"""
     return Api.create_special_volunteer(
         name,
         type,
-        rewards,
+        reward,
         participants
     )
 
 
+@api_route(Volunteer, url.create.special.ex)
+@api_login_required
+@permission(Permission.MANAGER)
+def create_special_volunteer_ex(
+    name: str,
+    type:VolType,
+    participants: list[ParticipantWithReward]
+) -> None:
+    """创建特殊义工, 但是每个人的时间不一样"""
+    return Api.create_special_volunteer_ex(
+        name,
+        type,
+        list(map(itemgetter('userident', 'reward'), participants))
+    )
+
+
 @api_route(Volunteer, url['volid'].signup)
-@login_required
+@api_login_required
 def signup_volunteer(volid: int) -> None:
     """报名义工"""
     Api.signup_volunteer(volid)
 
 
 @api_route(Volunteer, url['volid'].signup.rollback)
-@login_required
+@api_login_required
 def rollback_volunteer_signup(volid: int, userid: int) -> None:
     """撤回义工报名"""
     Api.rollback_volunteer_signup(volid, userid)
 
 
 @api_route(Volunteer, url['volid'].signup.accept)
-@login_required
+@api_login_required
 @permission(Permission.CLASS)
 def accept_volunteer_signup(volid: int, userid: int) -> None:
     """接受报名(团支书)"""
@@ -826,7 +885,7 @@ def accept_volunteer_signup(volid: int, userid: int) -> None:
 
 
 @api_route(Volunteer, url['volid'].delete)
-@login_required
+@api_login_required
 def delete_volunteer(volid: int) -> None:
     """删除义工"""
     Api.delete_volunteer(volid)
@@ -841,8 +900,8 @@ class VolunteerModificationPreparation(TypedDict):
     type: VolType
 
 
-@api_route(Volunteer, url['volid'].modify, 'GET')
-@login_required
+@api_route(Volunteer, url['volid'].modify.prepare, 'GET')
+@api_login_required
 def prepare_modify_volunteer(volid: int) -> VolunteerModificationPreparation:
     """
 获取修改义工所必须的信息
@@ -858,14 +917,32 @@ def prepare_modify_volunteer(volid: int) -> VolunteerModificationPreparation:
     }
         
 
+@api_route(Volunteer, url['volid'].modify.special.ex)
+@api_login_required
+@permission(Permission.MANAGER)
+def modify_special_volunteer_ex(
+    volid: int,
+    name: lengthedstr[32],
+    type: VolType,
+    participants: list[ParticipantWithReward]
+) -> None:
+    """修改特殊义工"""
+    Api.modify_special_volunteer_ex(
+        volid,
+        name,
+        type,
+        list(map(itemgetter('userident', 'reward'), participants))
+    )
+    
+    
 @api_route(Volunteer, url['volid'].modify.special)
-@login_required
+@api_login_required
 @permission(Permission.MANAGER)
 def modify_special_volunteer(
     volid: int,
     name: lengthedstr[32],
     type: VolType,
-    rewards: list[str],
+    reward: int,
     participants: list[str]
 ) -> None:
     """修改特殊义工"""
@@ -873,13 +950,13 @@ def modify_special_volunteer(
         volid,
         name,
         type,
-        rewards,
+        reward,
         participants
     )
 
 
 @api_route(Volunteer, url['volid'].modify)
-@login_required
+@api_login_required
 @permission(Permission.MANAGER)
 def modify_volunteer(
     volid: int,
@@ -901,7 +978,7 @@ def modify_volunteer(
 
 
 @api_route(Volunteer, url['volid'].modify.appointed)
-@login_required
+@api_login_required
 def modify_appointed_volunteer(
     volid: int,
     name: lengthedstr[32],
