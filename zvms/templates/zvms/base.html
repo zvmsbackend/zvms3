@@ -2,178 +2,157 @@
 {% block title %}镇海中学义工管理系统{% endblock %}
 {% block body_style %}d-flex flex-nowrap{% endblock %}
 {% block nav %}
-<div class="flex-shrink-0 p-3" style="width: 200px;">
-    <a href="#" class="d-flex align-items-center pb-3 mb-3 link-body-emphasis text-decoration-none border-bottom">
-        <span class="fs-5 fw-semibold">ZVMS</span>
-    </a>
-    <ul class="list-unstyled ps-0">
-        {% if _login %}
-        <li class="mb-1">
-            <a class="link-body-emphasis text-decoration-none rounded" href="/user/{{_userid}}">
-                <svg class="bi pe-none me-2" width="16" height="16">
-                    <use href="#home-icon"></use>
-                </svg>
-                主页
-            </a>
-        </li>
-        <li class="mb-1">
-            <a class="link-body-emphasis text-decoration-none rounded" href="/user/class/list">
-                <svg class="bi pe-none me-2" width="16" height="16">
-                    <use href="#class-icon"></use>
-                </svg>
-                班级列表
-            </a>
-        </li>
-        <li class="mb-1">
-            <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
-                data-bs-toggle="collapse" data-bs-target="#view-volunteers-collapse" aria-expanded="false">
-                查看义工
-            </button>
-            <div class="collapse" id="view-volunteers-collapse">
-                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                    <li>
-                        <a href="/volunteer/list" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16">
-                                <use href="#list-icon"></use>
-                            </svg>
-                            义工列表
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/volunteer/me" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16">
-                                <use href="#checked-icon"></use>
-                            </svg>
-                            我的义工
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </li>
-        <li class="mb-1">
-            <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
-                data-bs-toggle="collapse" data-bs-target="#create-volunteer-collapse" aria-expanded="false">
-                创建义工
-            </button>
-            <div class="collapse" id="create-volunteer-collapse">
-                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                    {% if Permission.MANAGER.authorized(_permission) %}
-                    <li>
-                        <a href="/volunteer/create" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16">
-                                <use href="#add-icon"></use>
-                            </svg>
-                            校内义工
-                        </a>
-                    </li>
-                    {% endif %}
-                    <li>
-                        <a href="/volunteer/create/appointed" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16">
-                                <use href="#checked-add-icon"></use>
-                            </svg>
-                            指定义工
-                        </a>
-                    </li>
-                    {% if Permission.MANAGER.authorized(_permission) %}
-                    <li>
-                        <a href="/volunteer/create/special" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16">
-                                <use href="#excl-add-icon"></use>
-                            </svg>
-                            特殊义工
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </div>
-        </li>
-        <li class="mb-1">
-            <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
-                data-bs-toggle="collapse" data-bs-target="#thought-collapse" aria-expanded="false">
-                感想
-            </button>
-            <div class="collapse" id="thought-collapse">
-                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                    <li>
-                        <a href="/thought/me" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16">
-                                <use href="#checked-icon"></use>
-                            </svg>
-                            我的感想
-                        </a>
-                    </li>
-                    {% if Permission.AUDITOR.__or__(Permission.MANAGER).authorized(_permission) %}
-                    <li>
-                        <a href="/thought/list" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16">
-                                <use href="#list-icon"></use>
-                            </svg>
-                            感想列表
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/thought/unaudited" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16">
-                                <use href="#x-icon"></use>
-                            </svg>
-                            未审核感想
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </div>
-        </li>
-        {% endif %}
-        <li class="mb-1">
-            <a class="link-body-emphasis text-decoration-none rounded" href="/about">
-                <svg class="bi pe-none me-2" width="16" height="16">
-                    <use href="#github-icon"></use>
-                </svg>
-                关于
-            </a>
-        </li>
-        <li class="border-top my-3"></li>
-        {% if _login %}
-        <li class="mb-1">
-            <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
-                data-bs-toggle="collapse" data-bs-target="#account-collapse" aria-expanded="false">
-                账户
-            </button>
-            <div class="collapse" id="account-collapse">
-                <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                    {% if Permission.MANAGER.authorized(_permission) %}
-                    <li>
-                        <a href="/management" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16">
-                                <use href="#management-icon"></use>
-                            </svg>
-                            后台管理
-                        </a>
-                    </li>
-                    {% endif %}
-                    {% if Permission.ADMIN.authorized(_permission) %}
-                    <li>
-                        <a href="/admin" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16">
-                                <use href="#admin-icon"></use>
-                            </svg>
-                            系统管理
-                        </a>
-                    </li>
-                    {% endif %}
-                    <li>
-                        <a href="/user/logout" class="link-body-emphasis text-decoration-none rounded">
-                            <svg class="bi pe-none me-2" width="16" height="16">
-                                <use href="#escape-icon"></use>
-                            </svg>
-                            登出
-                        </a>
-                    </li>
-                </ul>
-            </div>
-        </li>
-        {% endif %}
-    </ul>
+<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvas" aria-labelledby="offcanvas-label">
+    <div class="offcanvas-header">
+        <a href="#" class="d-flex align-items-center pb-3 mb-3 link-body-emphasis text-decoration-none border-bottom">
+            <span class="fs-5 fw-semibold" data-bs-dismiss="offcanvas" aria-label="Close">ZVMS</span>
+        </a>
+    </div>
+    <div class="offcanvas-body">
+        <ul class="list-unstyled ps-0">
+            {% if _login %}
+            <li class="mb-1">
+                <a class="link-body-emphasis text-decoration-none rounded" href="/user/{{_userid}}">
+                    <i class="bi bi-house"></i>
+                    主页
+                </a>
+            </li>
+            <li class="mb-1">
+                <a class="link-body-emphasis text-decoration-none rounded" href="/user/class/list">
+                    <i class="bi bi-book"></i>
+                    班级列表
+                </a>
+            </li>
+            <li class="mb-1">
+                <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
+                    data-bs-toggle="collapse" data-bs-target="#view-volunteers-collapse" aria-expanded="false">
+                    查看义工
+                </button>
+                <div class="collapse" id="view-volunteers-collapse">
+                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                        <li>
+                            <a href="/volunteer/list" class="link-body-emphasis text-decoration-none rounded">
+                                <i class="bi bi-list"></i>
+                                义工列表
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/volunteer/me" class="link-body-emphasis text-decoration-none rounded">
+                                <i class="bi bi-list-check"></i>
+                                我的义工
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+            <li class="mb-1">
+                <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
+                    data-bs-toggle="collapse" data-bs-target="#create-volunteer-collapse" aria-expanded="false">
+                    创建义工
+                </button>
+                <div class="collapse" id="create-volunteer-collapse">
+                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                        {% if Permission.MANAGER.authorized(_permission) %}
+                        <li>
+                            <a href="/volunteer/create" class="link-body-emphasis text-decoration-none rounded">
+                                <i class="bi bi-building-add"></i>
+                                校内义工
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li>
+                            <a href="/volunteer/create/appointed" class="link-body-emphasis text-decoration-none rounded">
+                                <i class="bi bi-building-check"></i>
+                                指定义工
+                            </a>
+                        </li>
+                        {% if Permission.MANAGER.authorized(_permission) %}
+                        <li>
+                            <a href="/volunteer/create/special" class="link-body-emphasis text-decoration-none rounded">
+                                <i class="bi bi-building-exclamation"></i>
+                                特殊义工
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </li>
+            <li class="mb-1">
+                <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
+                    data-bs-toggle="collapse" data-bs-target="#thought-collapse" aria-expanded="false">
+                    感想
+                </button>
+                <div class="collapse" id="thought-collapse">
+                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                        <li>
+                            <a href="/thought/me" class="link-body-emphasis text-decoration-none rounded">
+                                <i class="bi bi-list-check"></i>
+                                我的感想
+                            </a>
+                        </li>
+                        {% if Permission.AUDITOR.__or__(Permission.MANAGER).authorized(_permission) %}
+                        <li>
+                            <a href="/thought/list" class="link-body-emphasis text-decoration-none rounded">
+                                <i class="bi bi-list"></i>
+                                感想列表
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/thought/unaudited" class="link-body-emphasis text-decoration-none rounded">
+                                <i class="bi bi-x"></i>
+                                未审核感想
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </li>
+            {% endif %}
+            <li class="mb-1">
+                <a class="link-body-emphasis text-decoration-none rounded" href="/about">
+                    <i class="bi bi-github"></i>
+                    关于
+                </a>
+            </li>
+            <li class="border-top my-3"></li>
+            {% if _login %}
+            <li class="mb-1">
+                <button class="btn btn-toggle d-inline-flex align-items-center rounded border-0 collapsed"
+                    data-bs-toggle="collapse" data-bs-target="#account-collapse" aria-expanded="false">
+                    账户
+                </button>
+                <div class="collapse" id="account-collapse">
+                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                        {% if Permission.MANAGER.authorized(_permission) %}
+                        <li>
+                            <a href="/management" class="link-body-emphasis text-decoration-none rounded">
+                                <i class="bi bi-bank"></i>
+                                后台管理
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if Permission.ADMIN.authorized(_permission) %}
+                        <li>
+                            <a href="/admin" class="link-body-emphasis text-decoration-none rounded">
+                                <i class="bi bi-filetype-py"></i>
+                                系统管理
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li>
+                            <a href="/user/logout" class="link-body-emphasis text-decoration-none rounded">
+                                <i class="bi bi-escape"></i>
+                                登出
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
 </div>
+<a class="position-fixed bottom-0 mb-3 me-3 h4" data-bs-toggle="offcanvas" href="#offcanvas" role="button" aria-controls="offcanvas">
+    <i class="bi bi-command"></i>
+</a>
 {% endblock %}

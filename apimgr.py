@@ -235,8 +235,8 @@ def parse_sql(sql: str) -> list[tuple[str, dict[str, list[str]]]]:
     for tab, body in create_stmts:
         rows = {}
         for line in map(str.strip, re.split(r',\s*?\n', body)):
-            if (m := re.match(r'FOREIGN KEY\s*\((\w+)\)\s*REFERENCES\s*(.+)', line)) is not None:
-                rows[m.group(1)][1].append(f'REFERENCES {m.group(2)}')
+            if (m := re.match(r'FOREIGN KEY\s*\((\w+)\)\s*REFERENCES\s*(\w+)\s*\((\w+)\)', line)) is not None:
+                rows[m.group(1)][1].append(f'REFERENCES <a href="#{m.group(2)}">{m.group(2)}</a>({m.group(3)})')
             elif (m := re.match(r'PRIMARY KEY\s*\((.+)\)', line)) is not None:
                 for i in re.split(r',\s*', m.group(1)):
                     rows[i][1].append('PRIMARY KEY')
@@ -251,16 +251,13 @@ def dump_document(dst: str) -> None:
     app.app_context().push()
     with open('zvms.sql', encoding='utf-8') as file:
         sql = file.read()
-    for dir in [
-        dst, 
-        os.path.join(dst, 'static'), 
-        os.path.join(dst, 'static', 'css'),
-        os.path.join(dst, 'static', 'js')
-    ]:
-        if not os.path.isdir(dir):
-            os.mkdir(dir)
-    shutil.copy(os.path.join('zvms', 'static', 'css', 'index.css'), os.path.join(dst, 'static', 'css', 'index.css'))
-    shutil.copy(os.path.join('zvms', 'static', 'js', 'index.js'), os.path.join(dst, 'static', 'js', 'index.js'))
+    if not os.path.exists(dst):
+        os.mkdir(dst)
+    if not os.path.exists(os.path.join(dst, 'static')):
+        os.mkdir(os.path.join(dst, 'static'))
+        for dir in ['js', 'css', 'img']:
+            shutil.copytree(os.path.join('zvms', 'static', dir), os.path.join(dst, 'static', dir))
+    shutil.copy(os.path.join('zvms', 'favicon.ico'), os.path.join(dst, 'favicon.ico'))
     write_file(os.path.join(dst, 'index.html'), render_template('document/index.html'))
     write_file(os.path.join(dst, 'enums.html'), render_template(
         'document/enums.html',

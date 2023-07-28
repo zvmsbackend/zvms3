@@ -17,7 +17,7 @@
                 <tr>
                     <td><code>{{name}}</code></td>
                     <td><code>{{type}}</code></td>
-                    <td><code>{{' '.join(props)}}</code></td>
+                    <td><code>{{' '.join(props)|safe}}</code></td>
                 </tr>
                 {% endfor %}
             </tbody>
