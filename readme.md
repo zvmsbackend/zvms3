@@ -4,7 +4,7 @@
 
 1. 下载安装Python 3.10+
 2. 运行
-```bash
+```sh
 $ pip install -r requirements.txt
 ```
 
@@ -22,12 +22,12 @@ instance/zvms.db> source zvms.sql
     4. 运行`migrate.py`
 3. 如果要从头开始导入数据的话,
     1. 准备两份csv文件, `classes.csv`和`users.csv`, 格式分别为:
-    ```csv
+    ```
     ID, 班级名
     202209, 高一九班
     ```
     和
-    ```csv
+    ```
     ID, 用户名, 班级
     20220901, 张三, 202209
     ```
@@ -36,6 +36,24 @@ instance/zvms.db> source zvms.sql
    
 ## 运行
 
-```bash
+```sh
 $ python run.py [-p PORT]
+```
+
+## API管理器
+
+1. 找到API模板.ts文件
+2. 运行`apimgr.py`
+```sh
+$ usage: apimgr.py [-h] -e ENUM -s STRUCT -a API -t API_TEMPLATE -d DOC
+```
+3. 如果不想每次都指定五个参数, 那么创建一个名为`apimgr.json`的文件, 内容为
+```json
+{
+    "enum": "...",
+    "struct": "...",
+    "api": "...",
+    "api_template": "...",
+    "doc": "..."
+}
 ```
