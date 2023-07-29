@@ -3,16 +3,20 @@
 {% block container %}
 <ul class="nav nav-tabs" role="tablist">
     <li class="nav-item" role="presentation">
-      <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#csv-tab-pane" type="button" role="tab" aria-controls="csv-tab-pane" aria-selected="true">获取义工数据csv</button>
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#csv-tab-pane" type="button" role="tab"
+            aria-controls="csv-tab-pane" aria-selected="true">获取义工数据csv</button>
     </li>
     <li class="nav-item" role="presentation">
-      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#notice-tab-pane" type="button" role="tab" aria-controls="notice-tab-pane" aria-selected="false">通知管理</button>
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#notice-tab-pane" type="button" role="tab"
+            aria-controls="notice-tab-pane" aria-selected="false">通知管理</button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#password-tab-pane" type="button" role="tab" aria-controls="password-tab-pane" aria-selected="false">修改密码</button>
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#password-tab-pane" type="button" role="tab"
+            aria-controls="password-tab-pane" aria-selected="false">修改密码</button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#issue-tab-pane" type="button" role="tab" aria-controls="disabled-tab-pane" aria-selected="false">查看反馈</button>
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#issue-tab-pane" type="button" role="tab"
+            aria-controls="disabled-tab-pane" aria-selected="false">查看反馈</button>
     </li>
 </ul>
 <div class="tab-content">
@@ -23,13 +27,19 @@
         <a href="/management/edit-notices">编辑通知</a>
         <h2>发送通知</h2>
         <form action="/management/send-notice" method="POST" id="form">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="anonymous" name="anonymous" value="on">
-                <label class="form-check-label" for="anonymous">匿名(匿名通知发出后无法修改或删除)</label>
+            <div class="input-group mb-3">
+                <i class="bi bi-incognito"></i>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="anonymous" name="anonymous" value="on">
+                    <label class="form-check-label" for="anonymous">匿名(匿名通知发出后无法修改或删除)</label>
+                </div>
             </div>
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="school" name="school" value="on">
-                <label class="form-check-label" for="anonymous">学校通知</label>
+            <div class="input-group mb-3">
+                <i class="bi bi-bookmark"></i>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="school" name="school" value="on">
+                    <label class="form-check-label" for="anonymous">学校通知</label>
+                </div>
             </div>
             <div class="row">
                 <div class="col-8">
@@ -39,21 +49,25 @@
                     <button class="btn btn-primary" type="button" id="add-target">添加</button>
                 </div>
             </div>
-            <div class="form-group" id="targets">
-                <input class="form-control" type="text" name="targets">
+            <div class="form-group mb-3" id="targets">
+                <div class="input-group">
+                    <i class="bi bi-people input-group-text"></i>
+                    <input class="form-control" type="text" name="targets" required>
+                </div>
             </div>
             <div class="row">
-                <div class="col-6">
-                    <label class="form-label" for="title">输入通知标题</label>
-                    <input class="form-control" type="text" name="title" id="title" maxlength="32" required>
+                <div class="col-6 input-group mb-3">
+                    <i class="bi bi-pen input-group-text"></i>
+                    <input class="form-control" type="text" name="title" id="title" maxlength="32" placeholder="通知标题" required>
                 </div>
-                <div class="col-6">
-                    <label class="form-label" for="expire">输入过期时间</label>
-                    <input class="form-control" type="date" name="expire" id="expire" value="{{three_days_later}}" required>
+                <div class="col-6 input-group mb-3">
+                    <label class="input-group-text" for="expire">过期时间</label>
+                    <input class="form-control" type="date" name="expire" id="expire" value="{{three_days_later}}"
+                        required>
                 </div>
-                <div class="col-12">
-                    <label class="form-label" for="content">输入通知内容</label>
-                    <textarea class="form-control" name="content" rows="10" required></textarea>
+                <div class="col-12 input-group mb-3">
+                    <i class="bi bi-justify-left input-group-text"></i>
+                    <textarea class="form-control" name="content" rows="10" placeholder="通知内容" required></textarea>
                 </div>
                 {{submit_or_reset()}}
             </div>
@@ -72,10 +86,9 @@
                         class: 'row',
                         id: `target-${targetsCount}`
                     },
-                    `<div class="col-8">
+                    `<div class="input-group">
+                        <i class="bi bi-people input-group-text"></i>
                         <input class="form-control" type="text" name="targets" required>
-                    </div>
-                    <div class="col">
                         <button class="btn btn-danger" type="button" onclick="document.getElementById('target-${targetsCount}').remove()">删除</button>
                     </div>`
                 ))
@@ -85,17 +98,17 @@
     </div>
     <div class="tab-pane fade" id="password-tab-pane" role="tabpanel" aria-labelledby="password-tab" tabindex="0">
         <form action="/user/modify-password" method="POST" id="modify-password">
-            <div class="form-group">
-                <label class="form-label" for="target">输入目标的学号</label>
+            <div class="input-group mb-3">
+                <i class="bi bi-person input-group-text"></i>
                 <input class="form-control" type="number" id="target" name="target" placeholder="学号" required>
             </div>
             <input type="hidden" name="old">
-            <div class="form-group">
-                <label class="form-label" for="new">输入新密码</label>
+            <div class="input-group mb-3">
+                <i class="bi bi-lock input-group-text"></i>
                 <input class="form-control" type="password" id="new" name="new" placeholder="新密码" required>
             </div>
-            <div class="form-group">
-                <label class="form-label" for="confirm">确认密码</label>
+            <div class="input-group mb-3">
+                <i class="bi bi-lock-fill input-group-text"></i>
                 <input class="form-control" type="password" id="confirm" placeholder="确认密码" required>
             </div>
             <button class="btn btn-primary" type="submit">修改密码</button>

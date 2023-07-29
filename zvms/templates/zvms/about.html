@@ -19,10 +19,7 @@
 <img src="https://img.shields.io/github/stars/zvmsbackend/zvms-bootstrap?logo=github">
 {% if _login %}
 <form action="/issue" method="POST">
-    <div class="form-group">
-        <label class="form-label" for="content">反馈:</label>
-        <textarea class="form-control" name="content" id="content" maxlength="64" rows="5" required></textarea>
-    </div>
+    <textarea class="form-control" name="content" id="content" maxlength="64" rows="5" placeholder="反馈" required></textarea>
     <button class="btn btn-primary" type="submit" id="submit">提交反馈</button>
 </form>
 <p>你今天还能提交{{5 - issues_today}}条反馈</p>

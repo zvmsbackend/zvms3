@@ -3,9 +3,9 @@
 <h2>{{name}}</h2>
 <span class="badge bd-{{status.badge()}}">{{status}}</span>
 <form action="/thought/{{volid}}/{{userid}}/edit" method="POST" enctype="multipart/form-data">
-    <div class="form-group">
-        <label class="form-label" for="thought">输入感想</label>
-        <textarea class="form-control" name="thought" id="thought" rows="10" required>{{thought}}</textarea>
+    <div class="input-group mb-3">
+        <i class="bi bi-justify-left input-group-text"></i>
+        <textarea class="form-control" name="thought" id="thought" rows="10" placeholder="感想" required>{{thought}}</textarea>
     </div>
     <div class="row">
         <div class="col-8">
@@ -21,7 +21,10 @@
         </div>
         <div class="col">
             <p>或者, 从本地上传(可多选)</p>
-            <input class="form-control" type="file" name="files" accept="image/*" multiple>
+            <div class="input-group">
+                <i class="bi bi-images input-group-text"></i>
+                <input class="form-control" type="file" name="files" accept="image/*" multiple>
+            </div>
         </div>
     </div>
     {% if status == 2 %}

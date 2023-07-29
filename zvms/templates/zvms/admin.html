@@ -20,8 +20,8 @@
     <div class="tab-pane fade show active" id="permission-tab-pane" role="tabpanel" aria-labelledby="permission-tab"
         tabindex="0">
         <form action="/admin/permission" method="POST">
-            <div class="form-group">
-                <label class="form-label" for="userident">输入用户名或ID</label>
+            <div class="input-group mb-3">
+                <i class="bi bi-person input-group-text"></i>
                 <input class="form-control" type="text" id="userident" name="userident" placeholder="用户名或ID">
             </div>
             {% for value, name in permission2str.items() %}
@@ -38,15 +38,15 @@
     </div>
     <div class="tab-pane fade" id="login-tab-pane" role="tabpanel" aria-labelledby="login-tab" tabindex="0">
         <form action="/admin/login" method="POST">
-            <div class="form-group">
-                <label class="form-label" for="userident">输入用户名或ID</label>
+            <div class="input-group mb-3">
+                <i class="bi bi-person input-group-text"></i>
                 <input class="form-control" type="text" id="userident" name="userident" placeholder="用户名或ID">
             </div>
             <button class="btn btn-primary" type="submit">登录</button>
         </form>
     </div>
     <div class="tab-pane fade" id="editor-tab-pane" role="tabpanel" aria-labelledby="editor-tab" tabindex="0">
-        <h3>HTML编辑器</h3>
+        <h6>如果编辑器没有出现, 尝试刷新几次</h6>
         <div id="input" style="height:400px; border:1px solid black;"></div>
         <div class="card card-body" style="height:400px; border:1px solid black;" id="output"></div>
         <button class="btn btn-primary" type="button" id="confirm">确定</button>

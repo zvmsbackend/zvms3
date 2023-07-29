@@ -4,49 +4,44 @@
 <p>指定义工是任何人都可以创建的义工, 但只有管理员能创建校内形式的. 创建时必须指定所有参加者. </p>
 <form action="{{action}}" method="POST">
     <div class="row">
-        <div class="col-12">
-            <label class="form-label" for="name">输入义工名称</label>
+        <div class="col-12 input-group mb-3">
+            <i class="bi bi-pen input-group-text"></i>
             <input class="form-control" type="text" id="name" name="name" placeholder="义工名称" maxlength="32"
                 value="{{name}}" required>
         </div>
-        <div class="col-12">
-            <label class="form-label" for="description">输入义工描述</label>
+        <div class="col-12 input-group mb-3">
+            <i class="bi bi-justify-left input-group-text"></i>
             <textarea class="form-control" id="description" name="description" rows="5"
-                required>{{description}}</textarea>
+                placeholder="义工描述" required>{{description}}</textarea>
         </div>
-        <div class="col-{{'6' if Permission.MANAGER.authorized(_permission) else '12'}}">
-            <label class="form-label" for="reward">输入预期获得的义工时间</label>
+        <div class="col-{{'6' if Permission.MANAGER.authorized(_permission) else '12'}} input-group mb-3">
+            <i class="bi bi-clock input-group-text"></i>
             <input class="form-control" type="number" id="reward" name="reward" placeholder="义工时间" value="{{reward}}"
                 required>
         </div>
         {% if Permission.MANAGER.authorized(_permission) %}
-        <div class="col-6">
+        <div class="col-6 input-group mb-3">
+            <i class="bi bi-triangle input-group-text"></i>
             {{vol_types(type if type else 0, (1, '校内义工'), (2, '校外义工'))}}
         </div>
         {% else %}
         <input type="hidden" name="type" value="2">
         {% endif %}
-        <div class="col-12" id="participants">
-            <div class="row">
-                <div class="col-8">
-                    <input class="form-control" type="text" name="participants" placeholder="用户ID或姓名"
-                        value="{{participants[0] if participants else ''}}" required>
-                </div>
-                <div class="col">
-                    <button class="btn btn-primary" type="button" id="add-participant">添加</button>
-                </div>
+        <div class="col-12 mb-3" id="participants">
+            <div class="input-group">
+                <i class="bi bi-people input-group-text"></i>
+                <input class="form-control" type="text" name="participants" placeholder="用户ID或姓名"
+                    value="{{participants[0] if participants else ''}}" required>
+                <button class="btn btn-primary" type="button" id="add-participant">添加</button>
             </div>
             {% if participants %}
             {% for userid in participants[1:] %}
-            <div class="row" id="participant-{{userid}}">
-                <div class="col-8">
-                    <input class="form-control" type="text" name="participants" placeholder="用户ID或姓名" value="{{userid}}"
-                        required>
-                </div>
-                <div class="col">
-                    <button class="btn btn-danger" type="button"
-                        onclick="document.getElementById('participant-{{userid}}').remove()">删除</button>
-                </div>
+            <div class="input-group" id="participant-{{userid}}">
+                <i class="bi bi-people input-group-text"></i>
+                <input class="form-control" type="text" name="participants" placeholder="用户ID或姓名" value="{{userid}}"
+                    required>
+                <button class="btn btn-danger" type="button"
+                    onclick="document.getElementById('participant-{{userid}}').remove()">删除</button>
             </div>
             {% endfor %}
             {% endif %}
@@ -65,11 +60,12 @@
                 class: 'row',
                 id: `participant-${participantsCount}`
             },
-            `<div class="col-8">
-                <input class="form-control" type="text" name="participants" placeholder="用户ID或姓名" required>
-            </div>
-            <div class="col">
-                <button class="btn btn-danger" type="button" id="add-class" onclick="document.getElementById('participant-${participantsCount}').remove()">删除</button>
+            `<div class="input-group" id="participant-${participantsCount}">
+                <i class="bi bi-people input-group-text"></i>
+                <input class="form-control" type="text" name="participants" placeholder="用户ID或姓名" value="{{userid}}"
+                    required>
+                <button class="btn btn-danger" type="button"
+                    onclick="document.getElementById('participant-${participantsCount}').remove()">删除</button>
             </div>`
         ))
     });

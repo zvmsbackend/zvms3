@@ -13,7 +13,7 @@
             {% if _login %}
             <li class="mb-1">
                 <a class="link-body-emphasis text-decoration-none rounded" href="/user/{{_userid}}">
-                    <i class="bi bi-house"></i>
+                    <i class="bi bi-person-square"></i>
                     主页
                 </a>
             </li>
@@ -134,7 +134,7 @@
                         {% if Permission.ADMIN.authorized(_permission) %}
                         <li>
                             <a href="/admin" class="link-body-emphasis text-decoration-none rounded">
-                                <i class="bi bi-filetype-py"></i>
+                                <i class="bi bi-pc-display"></i>
                                 系统管理
                             </a>
                         </li>

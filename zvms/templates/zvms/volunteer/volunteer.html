@@ -32,9 +32,6 @@
         {% endif %}
         {% if holderid == _userid or Permission.MANAGER.authorized(_permission) and status != 2 %}
         <a class="btn btn-primary" href="/volunteer/{{id}}/modify" role="button">修改</a>
-        <!-- <form action="/volunteer/{{id}}/delete" method="POST">
-            <button class="btn btn-danger" type="submit">删除</button>
-        </form> -->
         <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#delete-modal">
             删除
         </button>
