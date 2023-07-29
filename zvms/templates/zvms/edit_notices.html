@@ -2,7 +2,7 @@
 {% block container %}
 {% if notices %}
 <div class="row">
-    <div id="list-nav" class="col-3">
+    <div id="list-nav" class="col-3 scrollbar">
         <div class="list-group list-group-flush">
             {% for id, title, _, _, _, _, _ in notices %}
             <a class="list-group-item list-group-item-action" href="#notice-{{id}}">{{title}}</a>
@@ -10,8 +10,7 @@
         </div>
     </div>
     <div class="col">
-        <div data-bs-spy="scroll" data-bs-target="#list-nav" data-bs-smooth-scroll="true"
-            style="height: 100vh; overflow: auto" tabindex="0">
+        <div data-bs-spy="scroll scrollbar" data-bs-target="#list-nav" data-bs-smooth-scroll="true" tabindex="0">
             {% for id, title, content, expire, senderid, sender, targets in notices %}
             <div class="card" id="notice-{{id}}">
                 <div class="card-body">

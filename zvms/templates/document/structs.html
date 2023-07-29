@@ -9,13 +9,12 @@
         </div>
     </div>
     <div class="col">
-        <div data-bs-spy="scroll" data-bs-target="#list-nav" data-bs-smooth-scroll="true"
-            style="height: 100vh; overflow: auto" tabindex="0">
+        <div data-bs-spy="scroll scrollbar" data-bs-target="#list-nav" data-bs-smooth-scroll="true" tabindex="0">
             {% for name, content in data %}
             <div class="card" id="{{name}}">
                 <h3 class="card-title">{{name}}</h3>
                 <p class="card-text">
-                    <pre><code>{{content|safe}}</code></pre>
+                <pre><code>{{content|safe}}</code></pre>
                 </p>
             </div>
             {% endfor %}

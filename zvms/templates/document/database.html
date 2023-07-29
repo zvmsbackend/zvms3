@@ -1,6 +1,6 @@
 {% extends "document/base.html" %}
 {% block container %}
-<div style="height: 100vh; overflow: auto">
+<div class="scrollbar">
     {% for name, columns in schema %}
     <div class="card card-body" id="{{name}}">
         <h2 class="card-title">{{name}}</h2>

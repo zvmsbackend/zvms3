@@ -1,7 +1,7 @@
 {% extends "document/base.html" %}
 {% block container %}
 <div class="row">
-    <div class="col-3" style="height: 100vh; overflow: auto">
+    <div class="col-3 scrollbar">
         <nav id="navbar-example3" class="h-100 flex-column align-items-stretch pe-4 border-end">
             <nav class="nav nav-pills flex-column">
                 {% for blueprint in blueprints %}
@@ -16,8 +16,8 @@
         </nav>
     </div>
     <div class="col">
-        <div data-bs-spy="scroll" data-bs-target="#navbar-example3" data-bs-smooth-scroll="true"
-            class="scrollspy-example-2" tabindex="0" style="height: 100vh; overflow: auto">
+        <div data-bs-spy="scroll scrollbar" data-bs-target="#navbar-example3" data-bs-smooth-scroll="true"
+            class="scrollspy-example-2" tabindex="0">
             {% for blueprint in blueprints %}
             <h4 id="{{blueprint.name}}">{{blueprint.name}}</h4>
             <p>URL前缀: /api<pre>{{blueprint.url_prefix}}</pre></p>

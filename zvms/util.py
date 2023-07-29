@@ -1,5 +1,5 @@
 from typing import _TypedDictMeta, Iterable, Any
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from random import choice
 import hashlib
 import re
@@ -84,8 +84,7 @@ def get_user_scores(userid: int) -> dict[int, int]:
 
 
 def three_days_later() -> date:
-    today = date.today()
-    return today.replace(day=today.day + 3)
+    return date.today() + timedelta(days=3)
 
 
 def send_notice_to(title: str, content: str, target: int, class_notice: bool = False) -> None:

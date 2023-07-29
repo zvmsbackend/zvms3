@@ -1,5 +1,7 @@
 {% extends "zvms/base.html" %}
 {% block container %}
+<link rel="stylesheet" data-name="vs/editor/editor.main"
+    href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.20.0/min/vs/editor/editor.main.min.css">
 <ul class="nav nav-tabs" role="tablist">
     <li class="nav-item" role="presentation">
         <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#permission-tab-pane" type="button"
@@ -45,22 +47,25 @@
     </div>
     <div class="tab-pane fade" id="editor-tab-pane" role="tabpanel" aria-labelledby="editor-tab" tabindex="0">
         <h3>HTML编辑器</h3>
-        <div class="row">
-            <div class="col">
-                <pre><textarea class="form-control" id="input" rows="10" required></textarea></pre>
-            </div>
-            <div class="col card">
-                <div class="card-body" id="output"></div>
-            </div>
-        </div>
+        <div id="input" style="height:400px; border:1px solid black;"></div>
+        <div class="card card-body" style="height:400px; border:1px solid black;" id="output"></div>
         <button class="btn btn-primary" type="button" id="confirm">确定</button>
         <script>
-            const input = document.getElementById("input");
             const output = document.getElementById("output");
             document.getElementById('confirm').addEventListener('click', (e) => {
-                output.innerHTML = input.value;
+                output.innerHTML = Array.from(document.querySelectorAll('.view-line>span')).map(n => n.innerText).join('\n').replaceAll('\u00A0', ' ');
             });
         </script>
     </div>
 </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.26.1/min/vs/loader.min.js"></script>
+<script>
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.26.1/min/vs' }});
+    require(["vs/editor/editor.main"], () => undefined);
+    setTimeout(() => monaco.editor.create(document.getElementById('input'), {
+        value: '<a href="">PLACEHOLDER</a>',
+        language: 'html',
+        theme: 'vs-dark',
+    }), 1000)
+</script>
 {% endblock %}
