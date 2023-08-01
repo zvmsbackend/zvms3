@@ -10,7 +10,7 @@ from flask import (
 )
 
 from .framework import (
-    requiredlist,
+    metalist,
     lengthedstr,
     ZvmsError,
     login_required,
@@ -135,8 +135,8 @@ def create_volunteer(
     description: str,
     time: date,
     reward: int,
-    classes: requiredlist[int],
-    classes_max: requiredlist[int]
+    classes: metalist[int, 'required'],
+    classes_max: metalist[int, 'required', 'duplcate']
 ):
     if len(classes) != len(classes_max):
         raise ZvmsError('表单校验错误')
@@ -223,8 +223,8 @@ def special_volunteer_helper(
 def create_special_volunteer(
     name: lengthedstr[32],
     type: VolType,
-    rewards: requiredlist[str],
-    participants: requiredlist[str]
+    rewards: metalist[str, 'required', 'duplicate'],
+    participants: metalist[str, 'required']
 ):
     return redirect('/volunteer/{}'.format(
         special_volunteer_helper(
@@ -318,8 +318,8 @@ def modify_volunteer_special(
     volid: int,
     name: lengthedstr[32],
     type: VolType,
-    rewards: requiredlist[str],
-    participants: requiredlist[str]
+    rewards: metalist[str, 'required', 'duplicate'],
+    participants: metalist[str, 'required']
 ):
     special_volunteer_helper(
         name,
@@ -341,8 +341,8 @@ def modify_volunteer(
     description: str,
     time: date,
     reward: int,
-    classes: requiredlist[int],
-    classes_max: requiredlist[int]
+    classes: metalist[int, 'required'],
+    classes_max: metalist[int, 'required', 'duplicate']
 ):
     if len(classes) != len(classes_max):
         raise ZvmsError('表单校验错误')

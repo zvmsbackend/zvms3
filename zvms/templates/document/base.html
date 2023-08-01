@@ -11,6 +11,12 @@
     <div class="offcanvas-body">
         <ul class="list-unstyled ps-0">
             <li class="mb-1">
+                <a class="link-body-emphasis text-decoration-none rounded" href="/notes.html">
+                    <i class="bi bi-exclamation"></i>
+                    注意事项
+                </a>
+            </li>
+            <li class="mb-1">
                 <a class="link-body-emphasis text-decoration-none rounded" href="/structs.html">
                     <i class="bi bi-table"></i>
                     接口
@@ -48,7 +54,8 @@
                     <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                         {% for blueprint in blueprints %}
                         <li>
-                            <a href="/blueprints.html#{{blueprint.name}}" class="link-body-emphasis text-decoration-none rounded">
+                            <a href="/blueprints.html#{{blueprint.name}}"
+                                class="link-body-emphasis text-decoration-none rounded">
                                 {{blueprint.name}}
                             </a>
                         </li>
@@ -59,7 +66,8 @@
         </ul>
     </div>
 </div>
-<a class="position-fixed bottom-0 mb-3 me-3 h4" data-bs-toggle="offcanvas" href="#offcanvas" role="button" aria-controls="offcanvas">
+<a class="position-fixed bottom-0 mb-3 me-3 h4" data-bs-toggle="offcanvas" href="#offcanvas" role="button"
+    aria-controls="offcanvas">
     <i class="bi bi-command"></i>
 </a>
 {% endblock %}

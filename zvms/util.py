@@ -11,7 +11,7 @@ from sqlalchemy.sql import text
 from sqlalchemy import Result
 import requests
 
-from .misc import db, Permission
+from .misc import db, Permission, ErrorCode
 from .framework import ZvmsError
 
 
@@ -43,6 +43,8 @@ def username2userid(usernames: Iterable[str]) -> list[int]:
                 raise ZvmsError(f'用户{username}不存在')
             case [id]:
                 ret.append(id)
+    if len(ret) != len(set(ret)):
+        raise ZvmsError(ErrorCode.VALIDATION_FAILS)
     return ret
 
 
@@ -67,7 +69,7 @@ markdown = Markdown(HTMLRenderer())
 
 def render_markdown(content: str) -> str:
     return re.sub(
-        r'href="[^/].+?"', 'href="#"',
+        r'href="([^/].*?)|(//.*?)"', 'href="#"',
         re.sub(r'src=".+"', '', markdown.parse(content))
     )
 

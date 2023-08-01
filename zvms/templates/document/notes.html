@@ -1,0 +1,13 @@
+{% extends "document/base.html" %}
+{% block container %}
+<ol>
+    <li>所有API的<code>number</code>参数都必须为整形, 且在32位整型范围之内</li>
+    <li>所有列表参数的内容不可重复, 有些列表要求至少一个元素</li>
+    <li>API的返回值仅供参考, 后端并不会进行校验</li>
+    <li>
+        义工介绍, 感想正文, 通知内容等理论上说应是Markdown格式. 例如, 义工被删除后, 其创建者收到的通知格式为
+        <pre>你创建的义工[{name}](/volunteer/{volid})被删除</pre>
+        前端应负责Markdown的消毒工作, 包括链接和图片, 但是要保留以单个<code>/</code>开头的链接
+    </li>
+</ol>
+{% endblock %}

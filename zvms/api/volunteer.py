@@ -5,7 +5,7 @@ from datetime import date
 from flask import Blueprint, session, abort
 
 from ..framework import (
-    requiredlist,
+    metalist,
     lengthedstr,
     ZvmsError,
     api_login_required,
@@ -23,7 +23,7 @@ from ..util import (
 )
 from ..misc import (
     ThoughtStatus,
-    Permission, 
+    Permission,
     ErrorCode,
     VolStatus,
     VolKind,
@@ -35,23 +35,23 @@ Volunteer = Blueprint('Volunteer', __name__, url_prefix='/volunteer')
 
 
 SelectResult: TypeAlias = tuple[
-    int, # 总数
+    int,  # 总数
     list[tuple[
-        int, # ID
-        str, # 名字
-        int, # 状态
-        int, # 创建者
-        str, # 创建者用户名
-        int # 类型
-]]]
+        int,  # ID
+        str,  # 名字
+        int,  # 状态
+        int,  # 创建者
+        str,  # 创建者用户名
+        int  # 类型
+    ]]]
 Classes: TypeAlias = list[tuple[int, int]]
 
 
 class Api:
     @staticmethod
     def _select_volunteers(
-        where_clause: str, 
-        args: dict, 
+        where_clause: str,
+        args: dict,
         page: int
     ) -> SelectResult:
         count = execute_sql(
@@ -75,7 +75,7 @@ class Api:
                 abort(404)
             case data: ...
         return count, data
-    
+
     @staticmethod
     def _can_signup(volid: int) -> bool:
         return execute_sql(
@@ -92,7 +92,7 @@ class Api:
             volid=volid,
             classid=session.get('classid')
         ).fetchone()[0]
-    
+
     @staticmethod
     def search_volunteers(name: str, page: int) -> SelectResult:
         return Api._select_volunteers(
@@ -102,11 +102,11 @@ class Api:
             },
             page
         )
-    
+
     @staticmethod
     def list_volunteers(page: int) -> SelectResult:
         return Api._select_volunteers('', {}, page)
-    
+
     @staticmethod
     def my_volunteers(page: int) -> SelectResult:
         return Api._select_volunteers(
@@ -129,20 +129,20 @@ class Api:
             },
             page
         )
-    
+
     @staticmethod
     def volunteer_info(volid: int) -> tuple[
-        str, # 名字
-        str, # 描述
-        int, # 状态
-        int, # 创建者ID
-        str, # 创建者用户名
-        int, # 类型
-        int, # 义工时间
-        str, # 报名时间
-        bool, # 可否报名
-        list[tuple[int, str, bool]], # 参加者
-        list[tuple[int, str]] # 报名者
+        str,  # 名字
+        str,  # 描述
+        int,  # 状态
+        int,  # 创建者ID
+        str,  # 创建者用户名
+        int,  # 类型
+        int,  # 义工时间
+        str,  # 报名时间
+        bool,  # 可否报名
+        list[tuple[int, str, bool]],  # 参加者
+        list[tuple[int, str]]  # 报名者
     ]:
         match execute_sql(
             'SELECT vol.name, vol.description, vol.status, vol.holder, user.username, vol.type, vol.reward, vol.time '
@@ -162,7 +162,7 @@ class Api:
             volid=volid,
             userid=session.get('userid'),
             can_view_thoughts=(Permission.MANAGER |
-                            Permission.AUDITOR).authorized(),
+                               Permission.AUDITOR).authorized(),
             can_view_class_thoughts=Permission.CLASS.authorized(),
             classid=session.get('classid')
         ).fetchall()
@@ -187,7 +187,7 @@ class Api:
                 classid=classid
             ).fetchone()[0] < max:
                 raise ZvmsError(ErrorCode, {'classid': classid})
-            
+
     @staticmethod
     def _volunteer_helper_post(volid: int, classes: Classes) -> None:
         for classid, max in classes:
@@ -284,7 +284,7 @@ class Api:
                         secretary
                     )
         return volid
-    
+
     @staticmethod
     def audit_volunteer(
         volid: int,
@@ -364,7 +364,7 @@ class Api:
                 userid
             )
         return volid
-    
+
     @staticmethod
     def create_special_volunteer_ex(
         name: str,
@@ -396,8 +396,7 @@ class Api:
                 userid
             )
         return volid
-        
-    
+
     @staticmethod
     def signup_volunteer(volid: int) -> None:
         if not Api._can_signup(volid):
@@ -422,7 +421,7 @@ class Api:
         ).fetchone():
             case [0]:
                 raise ZvmsError(ErrorCode.SIGNUP_NOT_EXISTS)
-            
+
     @staticmethod
     def rollback_volunteer_signup(volid: int, userid: int) -> None:
         if userid != int(session.get('userid')) and not Permission.CLASS.authorized():
@@ -461,14 +460,17 @@ class Api:
     @staticmethod
     def delete_volunteer(volid: int) -> None:
         match execute_sql(
-            'SELECT holder FROM volunteer WHERE id = :volid',
+            'SELECT holder, name FROM volunteer WHERE id = :volid',
             volid=volid
         ).fetchone():
             case None:
                 abort(404)
-            case [holder]: ...
-        if holder != int(session.get('userid')) and not Permission.MANAGER.authorized():
-            raise ZvmsError(ErrorCode.CANT_DELETE_OTHERS_VOLUNTEER)
+            case [holder, name]: ...
+        if holder != int(session.get('userid')):
+            if not Permission.MANAGER.authorized():
+                raise ZvmsError(ErrorCode.CANT_DELETE_OTHERS_VOLUNTEER)
+            send_notice_to(
+                '义工删除', f'你创建的义工[{name}](/volunteer/{volid})被删除', holder)
         execute_sql('DELETE FROM class_vol WHERE volid = :volid', volid=volid)
         execute_sql('DELETE FROM user_vol WHERE volid = :volid', volid=volid)
         execute_sql('DELETE FROM picture WHERE volid = :volid', volid=volid)
@@ -487,17 +489,17 @@ class Api:
         if classes:
             return VolKind.INSIDE, classes
         return VolKind.APPOINTED, None
-    
+
     @staticmethod
     def prepare_modify_volunteer(volid: int) -> tuple[
-        VolKind, 
-        str, # 名称
-        str, # 描述
-        str, # 举办时间
-        int, # 义工时间
-        int, # 义工类型
-        list[tuple[int, int]], # 参加者
-        list[tuple[int, int]] # 参加班级
+        VolKind,
+        str,  # 名称
+        str,  # 描述
+        str,  # 举办时间
+        int,  # 义工时间
+        int,  # 义工类型
+        list[tuple[int, int]],  # 参加者
+        list[tuple[int, int]]  # 参加班级
     ]:
         match execute_sql(
             'SELECT holder, name, description, reward, time, status, type '
@@ -525,13 +527,13 @@ class Api:
                     for i, (userid, reward) in enumerate(participants)
                 ]
         return (
-            kind, 
-            name, 
-            description, 
-            time, 
-            reward, 
-            type, 
-            participants, 
+            kind,
+            name,
+            description,
+            time,
+            reward,
+            type,
+            participants,
             maybe_classes or []
         )
 
@@ -552,7 +554,7 @@ class Api:
                 if kind != expected_kind:
                     raise ZvmsError(ErrorCode.VOLUNTEER_KIND_MISMATCH)
                 return status
-            
+
     @staticmethod
     def modify_special_volunteer(
         volid: int,
@@ -585,8 +587,7 @@ class Api:
                 status=ThoughtStatus.ACCEPTED,
                 reward=reward
             )
-        
-    
+
     @staticmethod
     def modify_special_volunteer_ex(
         volid: int,
@@ -777,11 +778,11 @@ def flatten_json_classes(classes: list[Class]) -> list[tuple]:
 @api_login_required
 @permission(Permission.MANAGER)
 def create_volunteer(
-    name: lengthedstr[32], 
-    description: str, 
-    time: date, 
-    reward: int, 
-    classes: requiredlist[Class]
+    name: lengthedstr[32],
+    description: str,
+    time: date,
+    reward: int,
+    classes: metalist[Class, 'required']
 ) -> None:
     """创建校内义工"""
     return Api.create_volunteer(
@@ -800,7 +801,7 @@ def create_appointed_volunteer(
     description: str,
     type: Literal[VolType.INSIDE, VolType.OUTSIDE],
     reward: int,
-    participants: requiredlist[str]
+    participants: metalist[str, 'required']
 ) -> None:
     """创建指定义工"""
     return Api.create_appointed_volunteer(
@@ -816,7 +817,7 @@ def create_appointed_volunteer(
 @api_login_required
 @permission(Permission.CLASS)
 def audit_volunteer(
-    volid: int, 
+    volid: int,
     status: Literal[VolStatus.ACCEPTED, VolStatus.REJECTED]
 ) -> None:
     """审核义工(团支书)"""
@@ -851,7 +852,7 @@ def create_special_volunteer(
 @permission(Permission.MANAGER)
 def create_special_volunteer_ex(
     name: str,
-    type:VolType,
+    type: VolType,
     participants: list[ParticipantWithReward]
 ) -> None:
     """创建特殊义工, 但是每个人的时间不一样"""
@@ -915,7 +916,7 @@ def prepare_modify_volunteer(volid: int) -> VolunteerModificationPreparation:
         'participants': dump_objects(participants, UserIdAndName),
         'classes': dump_objects(classes, Class)
     }
-        
+
 
 @api_route(Volunteer, url['volid'].modify.special.ex)
 @api_login_required
@@ -933,8 +934,8 @@ def modify_special_volunteer_ex(
         type,
         list(map(itemgetter('userident', 'reward'), participants))
     )
-    
-    
+
+
 @api_route(Volunteer, url['volid'].modify.special)
 @api_login_required
 @permission(Permission.MANAGER)

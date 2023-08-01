@@ -1,7 +1,7 @@
 {% extends "document/base.html" %}
 {% block container %}
 <div class="row">
-    <div id="list-nav" class="col-3">
+    <div id="list-nav" class="col-3 scrollbar">
         <div class="list-group list-group-flush">
             {% for name, _ in data %}
             <a class="list-group-item list-group-item-action" href="#{{name}}">{{name}}</a>
@@ -9,7 +9,7 @@
         </div>
     </div>
     <div class="col">
-        <div data-bs-spy="scroll scrollbar" data-bs-target="#list-nav" data-bs-smooth-scroll="true" tabindex="0">
+        <div class="scrollbar" data-bs-spy="scroll" data-bs-target="#list-nav" data-bs-smooth-scroll="true" tabindex="0">
             {% for name, content in data %}
             <div class="card" id="{{name}}">
                 <h3 class="card-title">{{name}}</h3>

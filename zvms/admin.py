@@ -9,9 +9,9 @@ from .framework import (
     zvms_route,
     url
 )
-from .util import render_template
 from .misc import Permission, permission2str
 from .api.admin import Api as AdminApi
+from .util import render_template
 
 Admin = Blueprint('Admin', __name__, url_prefix='/admin')
 

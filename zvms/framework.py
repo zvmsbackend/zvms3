@@ -65,10 +65,10 @@ class Validator(metaclass=ABCMeta):
 class BoolValidator(Validator):
     def _validate(self, /, arg: bool) -> bool:
         return arg
-    
+
     def as_json(self) -> Any:
         return 'boolean'
-    
+
 
 boolean = BoolValidator()
 
@@ -165,38 +165,39 @@ dynamic = DynamicValidator()
 
 
 class ListValidator(Validator):
-    def __init__(self, /, child_validator: Validator, required: bool) -> None:
+    def __init__(self, /, child_validator: Validator, required: bool, unique: bool) -> None:
         self.child_validator = child_validator
         self.required = required
+        self.unique = unique
 
     def _validate(self, /, arg: list) -> list:
         if not arg and self.required:
-            Validator.error(self, json)
+            Validator.error(self, arg)
         ret = []
         for i, item in enumerate(arg):
             with Validator.path(f'[{i}]'):
                 ret.append(self.child_validator.validate(item))
-        if len(ret) != sum(1 for i, x in enumerate(ret) if x not in ret[:i]):
-            Validator.error(self, json)
+        if self.unique and len(ret) != sum(1 for i, x in enumerate(ret) if x not in ret[:i]):
+            Validator.error(self, arg)
         return ret
 
     def as_json(self) -> Any:
-        if self.required:
-            return [self.child_validator.as_json(), 'required']
-        return [self.child_validator.as_json()]
+        return [self.child_validator.as_json()] + (['required'] if self.required else []) + (['unique'] if self.unique else [])
 
     def from_files(self) -> bool:
         return self.child_validator.from_files()
 
 
-class _RequiredListValidatorMaker:
-    def __init__(self, /, generic_argument) -> None:
+class _ListValidatorMaker:
+    def __init__(self, /, generic_argument: type, required: bool, unique: bool) -> None:
         self.generic_argument = generic_argument
+        self.required = required
+        self.unique = unique
 
 
-class requiredlist(list):
-    def __class_getitem__(cls, /, generic_argument: type) -> object:
-        return _RequiredListValidatorMaker(generic_argument)
+class metalist(list):
+    def __class_getitem__(cls, /, args: tuple) -> object:
+        return _ListValidatorMaker(args[0], 'required' in args, 'duplicate' not in args)
 
 
 class ObjectValidator(Validator):
@@ -335,9 +336,9 @@ def annotation2validator(annotation: type | Validator, mode: RouteMode, default:
     match annotation:
         case _StringValidatorMaker(min=min, max=max):
             ret = StringValidator(min, max)
-        case _RequiredListValidatorMaker(generic_argument=generic_argument):
+        case _ListValidatorMaker(generic_argument=generic_argument, required=required, unique=unique):
             ret = ListValidator(annotation2validator(
-                generic_argument, mode, default), True)
+                generic_argument, mode, default), required, unique)
         case Validator():
             ret = annotation
         case EnumType():
@@ -347,7 +348,7 @@ def annotation2validator(annotation: type | Validator, mode: RouteMode, default:
                 ret = EnumStringValidator(annotation)
         case GenericAlias():
             ret = ListValidator(annotation2validator(
-                *annotation.__args__, mode, default), False)
+                *annotation.__args__, mode, default), False, True)
         case _LiteralGenericAlias():
             if mode == 'json':
                 ret = LiteralValidator(annotation.__args__)
@@ -373,14 +374,14 @@ def annotation2validator(annotation: type | Validator, mode: RouteMode, default:
 
 class Api:
     def __init__(
-        self, 
+        self,
         blueprint: Blueprint,
-        name: str, 
-        url: Url, 
+        name: str,
+        url: Url,
         method: Literal['GET', 'POST'],
         doc: str,
         permission: Permission,
-        params: dict[str, type], 
+        params: dict[str, type],
         returns: type
     ) -> None:
         self.blueprint = blueprint
@@ -421,6 +422,7 @@ def route(
             for name, param in sig.parameters.items()
             if name not in url.params
         })
+
         @wraps(fn)
         def wrapper(*args, **kwargs):
             if mode == 'json':

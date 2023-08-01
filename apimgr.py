@@ -20,7 +20,7 @@ start = perf_counter()
 from flask import render_template as _render_template
 
 from zvms.framework import (
-    _RequiredListValidatorMaker,
+    _ListValidatorMaker,
     _StringValidatorMaker, 
     Api
 )
@@ -133,7 +133,7 @@ def py2ts(ann: type, in_structs: bool, enable_link: bool = False) -> str:
             return 'enums.' + ann.__name__
         case GenericAlias(__args__=[arg]):
             return py2ts(arg, in_structs, enable_link) + '[]'
-        case _RequiredListValidatorMaker(generic_argument=arg):
+        case _ListValidatorMaker(generic_argument=arg):
             return py2ts(arg, in_structs, enable_link) + '[]'
         case _StringValidatorMaker():
             return 'string'
@@ -259,6 +259,7 @@ def dump_document(dst: str) -> None:
             shutil.copytree(os.path.join('zvms', 'static', dir), os.path.join(dst, 'static', dir))
     shutil.copy(os.path.join('zvms', 'favicon.ico'), os.path.join(dst, 'favicon.ico'))
     write_file(os.path.join(dst, 'index.html'), render_template('document/index.html'))
+    write_file(os.path.join(dst, 'notes.html'), render_template('document/notes.html'))
     write_file(os.path.join(dst, 'enums.html'), render_template(
         'document/enums.html',
         data=chain(
