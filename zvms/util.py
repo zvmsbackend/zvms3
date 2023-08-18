@@ -70,7 +70,7 @@ markdown = Markdown(HTMLRenderer())
 def render_markdown(content: str) -> str:
     return re.sub(
         r'href="([^/].*?)|(//.*?)"', 'href="#"',
-        re.sub(r'src=".+"', '', markdown.parse(content))
+        re.sub(r'src=".+"', '', markdown.parse(content)[0])
     )
 
 
