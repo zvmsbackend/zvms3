@@ -100,8 +100,6 @@ class DateValidator(Validator):
     def _validate(self, /, arg: str) -> date:
         try:
             d = date.fromisoformat(arg)
-            if d < date.today():
-                Validator.error(self, arg)
             return d
         except ValueError:
             Validator.error(self, arg)

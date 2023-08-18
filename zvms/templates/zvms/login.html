@@ -1,7 +1,7 @@
 {% extends "zvms/base.html" %}
 {% block container %}
 <div class="col-md-10 mx-auto col-lg-5">
-    <form class="p-4 p-md-5 border rounded-3 bg-body-tertiary" method="POST">
+    <form class="p-4 p-md-5 border rounded-3 bg-body-tertiary" method="POST" id="form">
         <div class="form-floating mb-3">
             <input type="test" class="form-control" id="userident" name="userident" placeholder="张三/20221145">
             <label for="userident">用户名或ID</label>
@@ -11,6 +11,41 @@
             <label for="password">密码</label>
         </div>
         <button class="w-100 btn btn-lg btn-primary" type="submit">登录</button>
+        <div class="row">
+            <div class="form-check col-10">
+                <input class="form-check-input" type="checkbox" id="remember">
+                <label class="form-check-label" for="remember">记住密码</label>
+            </div>
+            <div class="col">
+                <button class="btn btn-primary" id="clear" type="button">清除</button>
+            </div>
+        </div>
     </form>
 </div>
+<script>
+    const localStorageKey = 'zvms/v3/device/';
+    const [
+        form,
+        userident,
+        password,
+        remember,
+        clear
+    ] = ['form', 'userident', 'password', 'remember', 'clear'].map(s => document.getElementById(s));
+    if ((userid = localStorage.getItem(localStorageKey + 'userident')) !== null) {
+        userident.value = userid;
+    }
+    if ((pwd = localStorage.getItem(localStorageKey + 'password')) !== null) {
+        password.value = pwd;
+    }
+    clear.addEventListener('click', e => {
+        localStorage.removeItem(localStorageKey + 'userident');
+        localStorage.removeItem(localStorageKey + 'password');
+    })
+    form.addEventListener('submit', e => {
+        localStorage.setItem(localStorageKey + 'userident', userident.value);
+        if (remember.checked) {
+            localStorage.setItem(localStorageKey + 'password', password.value);
+        }
+    })
+</script>
 {% endblock %}

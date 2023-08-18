@@ -129,9 +129,9 @@ def msn_weather():
         enumerate=enumerate,
         zip=zip,
         datetime=datetime,
-        location=data['WeatherPageMeta']['_@STATE@_']['location']['displayName'],
+        location=data['WeatherData']['_@STATE@_']['currentLocation']['displayName'],
         chart_data=json.dumps([
-            (i['dayTextLocaleString'], i['highTemperature'], i['lowTemperature'])
+            (i['dayTextLocaleString'], i['highTemp'], i['lowTemp'])
             for i in data['WeatherData']['_@STATE@_']['forecast']
         ], ensure_ascii=False)
     )
