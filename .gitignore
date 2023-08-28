@@ -6,3 +6,4 @@ config.py
 apimgr.json
 *.ts
 doc
+*ipynb*

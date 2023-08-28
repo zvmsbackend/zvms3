@@ -255,7 +255,7 @@ def dump_document(dst: str) -> None:
         os.mkdir(dst)
     if not os.path.exists(os.path.join(dst, 'static')):
         os.mkdir(os.path.join(dst, 'static'))
-        for dir in ['js', 'css', 'img']:
+        for dir in ['js', 'css', 'img', 'font']:
             shutil.copytree(os.path.join('zvms', 'static', dir), os.path.join(dst, 'static', dir))
     shutil.copy(os.path.join('zvms', 'favicon.ico'), os.path.join(dst, 'favicon.ico'))
     write_file(os.path.join(dst, 'index.html'), render_template('document/index.html'))
