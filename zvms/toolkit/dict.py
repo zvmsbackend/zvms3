@@ -56,6 +56,8 @@ def bing_dictionary_get(
     if kind == 'bing':
         res = get_with_timeout('https://cn.bing.com/dict?q=' + quote(word))
         soup = bs4.BeautifulSoup(res.text, 'lxml')
+        if soup.find('div', class_='no_results') is not None:
+            raise ZvmsError('查无此结果')
         pronunciation = soup.find('div', {'class': 'hd_p1_1'}).get_text()
         return render_template(
             'toolkit/dict/result.html',

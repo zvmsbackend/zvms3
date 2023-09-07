@@ -62,7 +62,7 @@ class Api:
         ).fetchone():
             case None:
                 raise ZvmsError(ErrorCode.USER_NOT_EXISTS, {'userid': target})
-            case [perm] if perm & Permission.ADMIN and not manager:
+            case [perm] if perm & Permission.ADMIN and target != int(session.get('userid')):
                 raise ZvmsError(ErrorCode.NOT_AUTHORIZED)
         if not manager and execute_sql(
             'SELECT * FROM user WHERE userid = :userid AND password = :password',
