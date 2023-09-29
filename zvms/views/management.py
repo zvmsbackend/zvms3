@@ -6,20 +6,20 @@ from flask import (
     redirect
 )
 
-from .util import (
+from ..util import (
     render_template,
     three_days_later,
 )
-from .framework import (
+from ..framework import (
     ZvmsError,
     login_required,
     permission,
     zvms_route,
     url
 )
-from .misc import Permission
-from .api.issue import Api as IssueApi
-from .api.notice import Api as NoticeApi
+from ..kernel import notice as NoticeKernel
+from ..kernel import issue as IssueKernel
+from ..misc import Permission
 
 Management = Blueprint('Management', __name__, url_prefix='/management')
 
@@ -30,7 +30,7 @@ Management = Blueprint('Management', __name__, url_prefix='/management')
 def index():
     return render_template(
         'zvms/management.html',
-        issues=IssueApi.list_issues(),
+        issues=IssueKernel.list_issues(),
         three_days_later=three_days_later().isoformat()
     )
 
@@ -47,7 +47,7 @@ def send_notice(
     expire: date
 ):
     if school:
-        NoticeApi.send_school_notice(
+        NoticeKernel.send_school_notice(
             title,
             content,
             anonymous,
@@ -56,7 +56,7 @@ def send_notice(
     else:
         if not targets:
             raise ZvmsError('应至少提供一个目标')
-        NoticeApi.send_notice(
+        NoticeKernel.send_notice(
             title,
             content,
             anonymous,
@@ -74,7 +74,7 @@ def edit_notices_get():
         'zvms/edit_notices.html',
         notices=[
             (*spam, list(enumerate(targets)))
-            for *spam, targets in NoticeApi.list_notices()
+            for *spam, targets in NoticeKernel.list_notices()
         ]
     )
 
@@ -83,7 +83,7 @@ def edit_notices_get():
 @login_required
 @permission(Permission.MANAGER)
 def edit_notices_post(noticeid: int, title: str, content: str, targets: list[str]):
-    NoticeApi.edit_notice(
+    NoticeKernel.edit_notice(
         noticeid,
         title,
         content,
@@ -96,5 +96,5 @@ def edit_notices_post(noticeid: int, title: str, content: str, targets: list[str
 @login_required
 @permission(Permission.MANAGER)
 def delete_notice(noticeid: int):
-    NoticeApi.delete_notice(noticeid)
+    NoticeKernel.delete_notice(noticeid)
     return redirect('/management/edit-notices')

@@ -23,6 +23,14 @@
                     <li class="nav-item">
                         <a class="nav-link active" aria-current="page" href="/user/{{_userid}}">回到主站</a>
                     </li>
+                    {% if Permission.ADMIN.authorized(_permission) %}
+                    <li class="nav-item">
+                        <a class="nav-link" aria-current="page" href="/toolkit/management">后台管理</a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link" aria-current="page" href="/toolkit/literacy">文艺角</a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link" aria-current="page" href="/toolkit/weather">天气预报</a>
                     </li>
@@ -33,17 +41,10 @@
                         <a class="nav-link" aria-current="page" href="/toolkit/wallpapers">必应壁纸</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" aria-current="page" href="/toolkit/birthday">生日祝福</a>
+                        <a class="nav-link" aria-current="page" href="/static/calc/index.html">计算器</a>
                     </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                            词典
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/toolkit/dict/bing">必应词典</a></li>
-                            <li><a class="dropdown-item" href="/toolkit/dict/zh">汉语词典</a></li>
-                        </ul>
+                    <li class="nav-item">
+                        <a class="nav-link" aria-current="page" href="/toolkit/dict">电子词典</a>
                     </li>
                 </ul>
             </div>

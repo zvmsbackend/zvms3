@@ -1,0 +1,9 @@
+{% extends "toolkit/base.html" %}
+{% block container %}
+<h3>可能的结果:</h3>
+<ul class="list-group">
+    {% for word in results %}
+    <li class="list-group-item"><a href="?kind=e2c&word={{word}}">{{word}}</a></li>
+    {% endfor %}
+</ul>
+{% endblock %}

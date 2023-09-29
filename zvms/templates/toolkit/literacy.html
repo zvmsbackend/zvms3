@@ -1,0 +1,136 @@
+{% extends "toolkit/base.html" %}
+{% block container %}
+<p id="opening"></p>
+<ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#library-tab-pane" type="button" role="tab"
+            aria-controls="library-tab-pane" aria-selected="true">爱书吧</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#music-tab-pane" type="button" role="tab"
+            aria-controls="music-tab-pane" aria-selected="false">广播站</button>
+    </li>
+</ul>
+<div class="tab-content" style="height: 500px;">
+    <div class="tab-pane fade show active" id="library-tab-pane" role="tabpanel" aria-labelledby="library-tab"
+        tabindex="0" style="height: 100%">
+        {% if library_url %}
+        <iframe style="width: 100%; height: 100%;" src="{{library_url}}"></iframe>
+        {% else %}
+        <div class="alert alert-danger">
+            <div class="card-body">
+                爱书吧没有开放
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    <div class="tab-pane fade" id="music-tab-pane" role="tabpanel" aria-labelledby="music-tab" tabindex="0">
+        {% if music %}
+        <h2>{{music.title}}</h2>
+        <div class="row">
+            <div class="col-4">
+                <label for="volume" class="form-label">调节音量</label>
+            </div>
+            <div class="col">
+                <input id="volume" class="form-range" type="range" min="0" max="100" value="50">
+            </div>
+        </div>
+        <div class="progress">
+            <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <button type="button" class="form-control" id="pause">暂停</button>
+            </div>
+            <div class="col">
+                <button type="button" class="form-control" id="play">播放</button>
+            </div>
+            <div class="col">
+                <button type="button" class="form-control" id="backward">快退</button>
+            </div>
+            <div class="col">
+                <button type="button" class="form-control" id="forward">快进</button>
+            </div>
+        </div>
+        <script>
+            const url = '{{music.url|safe}}';
+        </script>
+        <script>
+            const audio = new Audio(url);
+            audio.load();
+            audio.volume = 0.5;
+            const volume = document.getElementById('volume');
+            const progress = document.getElementById('progress-bar');
+            volume.addEventListener('change', (e) => {
+                audio.volume = volume.value / 100;
+            });
+            audio.currentTime = 0;
+            audio.addEventListener('timeupdate', (e) => {
+                progress.style = `width: ${audio.currentTime / audio.duration * 100}%`;
+            });
+            document.getElementById('pause').addEventListener('click', (e) => {
+                audio.pause();
+            });
+            document.getElementById('play').addEventListener('click', (e) => {
+                audio.play();
+            });
+            document.getElementById('backward').addEventListener('click', (e) => {
+                if (audio.currentTime > 10) {
+                    audio.currentTime -= 10;
+                }
+            });
+            document.getElementById('forward').addEventListener('click', (e) => {
+                if (audio.currentTime < audio.duration - 10) {
+                    audio.currentTime += 10;
+                }
+            });
+        </script>
+        {% else %}
+        <div class="alert alert-danger">
+            <div class="card-body">
+                广播站没有歌曲
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    <script>
+        const opening = document.getElementById('opening');
+        function close() {
+            audio.remove();
+            document.querySelector('.tab-content').innerHTML = `
+            <div class="alert alert-danger">
+                <div class="card-body">
+                    文艺角已关闭
+                </div>
+            </div>`;
+        }
+        function heartbeat() {
+            fetch('/toolkit/heartbeat', {timeout: 1000})
+                .catch(e => close())
+                .then(res => res.json())
+                .then(data => {
+                    switch (data.kind) {
+                        case 'close':
+                            close();
+                            return;
+                        case 'offlineEnabled': return;
+                        case 'open': break;
+                        case 'timeLimit':
+                            const now = new Date();
+                            const start = new Date(`${now.toDateString()} ${data.start}`);
+                            const end = new Date(`${now.toDateString()} ${data.end}`);
+                            if (now < start || now > end) {
+                                close();
+                                return;
+                            } else {
+                                opening.innerHTML = `文艺角的开放时间是: <span style="color: red;">${start.toTimeString()}</span> ~ <span style="color: red;">${end.toTimeString()}</span>`;
+                                break;
+                            }
+                    }
+                    setTimeout(heartbeat, 10000);
+                });
+        }
+        heartbeat();
+    </script>
+</div>
+{% endblock %}

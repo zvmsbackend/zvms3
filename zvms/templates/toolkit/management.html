@@ -1,0 +1,41 @@
+{% extends "toolkit/base.html" %}
+{% block container %}
+<form method="POST">
+    <input type="hidden" name="action" value="set-library-url">
+    <input type="text" class="form-control" name="url" value="{{library_url}}">
+    <button type="subit" class="btn btn-primary">修改爱书吧URL</button>
+</form>
+<hr>
+<form method="POST">
+    <input type="hidden" name="action" value="close-music">
+    <button type="submit" class="btn btn-danger">关闭广播站</button>
+</form>
+<hr>
+<form method="POST">
+    <input type="hidden" name="action" value="search-music">
+    <input id="keyword" name="keyword" type="text" class="form-control" placeholder="输入关键词">
+    <button class="btn btn-primary" type="submit">搜索音乐</button>
+</form>
+<hr>
+<form method="POST">
+    <input type="hidden" name="action" value="set-opening">
+    <select class="form-select" name="kind" id="kind">
+        <option value="close" selected>关闭</option>
+        <option value="open">打开</option>
+        <option value="offlineEnabled">允许离线</option>
+        <option value="timeLimit" id="timeLimit">限时</option>
+    </select>
+    <div id="timeRange" style="display: none;">
+        <input type="text" class="form-control" name="start" placeholder="start">
+        <input type="text" class="form-control" name="end" placeholder="end">
+    </div>
+    <button type="submit" class="btn btn-primary">设置文艺角开放模式</button>
+</form>
+<script>
+    const timeRange = document.getElementById('timeRange');
+    const timeLimit = document.getElementById('timeLimit');
+    document.getElementById('kind').addEventListener('change', e => {
+        timeRange.style.display = timeLimit.selected ? 'block': 'none'
+    })
+</script>
+{% endblock %}

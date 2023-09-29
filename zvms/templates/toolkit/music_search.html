@@ -1,0 +1,21 @@
+{% extends "toolkit/base.html" %}
+{% block container %}
+{% for music in data %}
+<h2>{{music.name}}</h2>
+<h4>{{music.url}}</h4>
+<ul>
+    {% for artist in music.artists %}
+    <li>{{artist.name}}</li>
+    {% endfor %}
+</ul>
+<audio controls>
+    <source src="{{music.url}}">
+</audio>
+<form action="/toolkit/music-search" method="POST">
+    <input type="hidden" name="title" value="{{music.name}}">
+    <input type="hidden" name="url" value="{{music.url}}">
+    <button type="submit" class="btn btn-primary">选择</button>
+</form>
+<hr>
+{% endfor %}
+{% endblock %}

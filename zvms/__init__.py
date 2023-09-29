@@ -1,13 +1,8 @@
 from flask import Flask, redirect, send_file
 from flask_cors import CORS
 
-from .management import Management
-from .volunteer import Volunteer
-from .thought import Thought
 from .toolkit import Toolkit
-from .about import About
-from .admin import Admin
-from .user import User
+from .views import Views
 from .api import Api
 from .misc import db
 from . import config
@@ -30,10 +25,5 @@ def favicon():
 
 
 app.register_blueprint(Api)
-app.register_blueprint(User)
-app.register_blueprint(About)
-app.register_blueprint(Admin)
-app.register_blueprint(Thought)
+app.register_blueprint(Views)
 app.register_blueprint(Toolkit)
-app.register_blueprint(Volunteer)
-app.register_blueprint(Management)

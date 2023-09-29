@@ -7,3 +7,5 @@ apimgr.json
 *.ts
 doc
 *ipynb*
+weather-api-key
+ecdict.csv

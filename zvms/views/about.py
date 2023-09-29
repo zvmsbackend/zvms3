@@ -5,14 +5,14 @@ from flask import (
     session
 )
 
-from .util import render_template
-from .framework import (
+from ..util import render_template
+from ..framework import (
     lengthedstr,
     login_required,
     zvms_route,
     url
 )
-from .api.issue import Api as IssueApi
+from ..kernel import issue as IssueKernel
 
 About = Blueprint('About', __name__)
 
@@ -22,7 +22,7 @@ def index():
     issues_posted = None
     issues_today = 0
     if 'userid' in session:
-        issues_today, issues_posted = IssueApi.my_issues()
+        issues_today, issues_posted = IssueKernel.my_issues()
     return render_template(
         'zvms/about.html',
         issues_posted=issues_posted,
@@ -33,5 +33,5 @@ def index():
 @zvms_route(About, url.issue)
 @login_required
 def issue(content: lengthedstr[64]):
-    IssueApi.post_issue(content)
+    IssueKernel.post_issue(content)
     return redirect(request.referrer)

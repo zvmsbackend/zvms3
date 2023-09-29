@@ -1,0 +1,23 @@
+{% extends "toolkit/base.html" %}
+{% block container %}
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">{{word}}</h5>
+        {% if phonetic %}
+        <p class="card-text">{{phonetic}}</p>
+        {% endif %}
+        {% if definition %}
+        <ul class="list-group">
+            {% for def in definition %}
+            <li class="list-group-item">{{def}}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        <ul class="list-group">
+            {% for trans in translation %}
+            <li class="list-group-item">{{trans}}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

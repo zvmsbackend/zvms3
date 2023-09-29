@@ -1,0 +1,14 @@
+{% extends "toolkit/base.html" %}
+{% block container %}
+<form>
+    <div class="input-group">
+        <input class="form-control" type="text" name="word" placeholder="输入单词或中文" maxlength="45" required>
+        <select class="form-select" name="kind" required>
+            <option value="e2c" selected>英汉</option>
+            <option value="c2e">中英</option>
+            <option value="indeterminate">模糊查询</option>
+        </select>
+    </div>
+    <button class="btn btn-primary" type="submit">搜索</button>
+</form>
+{% endblock %}

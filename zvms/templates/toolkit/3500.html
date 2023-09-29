@@ -23,7 +23,7 @@
     const list = document.getElementById('list');
     function generateList(words) {
         return words.map(w => `<li class="list-group-item">
-        <a href="/query?verbose=yes&word=${w}">${w}</a>
+        <a href="/toolkit/dict?kind=e2c&word=${w}">${w}</a>
 </li>`).join('');
     }
     const letters = Array.from('abcdefghijklmnopqrstuvwxyz');
@@ -42,7 +42,7 @@
                 nav.innerHTML = '';
                 list.innerHTML = '<h4>未找到结果</h4>';
             } else if (result.length == 1) {
-                location.href = '/query?verbose=yes&word=' + result[0];
+                location.href = '/toolkit/dict?kind=e2c&word=' + result[0];
             } else {
                 nav.innerHTML = '';
                 list.innerHTML = `<h4>共搜索到${result.length}个结果</h4>

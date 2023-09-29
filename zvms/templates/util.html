@@ -20,11 +20,11 @@
 </form>
 {% endmacro %}
 {% macro vol_types(selected=0) %}
-<select class="form-select" name="type">
+<select class="form-select" name="type" required>
     {% if selected == 0 %}
-    <option>选择义工类型</option>
+    <option value="">选择义工类型</option>
     {% else %}
-    <option selected>选择义工类型</option>
+    <option value="" selected>选择义工类型</option>
     {% endif %}
     {% for value, text in varargs %}
     {% if selected == value %}

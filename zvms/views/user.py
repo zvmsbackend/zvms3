@@ -5,21 +5,21 @@ from flask import (
     session
 )
 
-from .util import (
+from ..util import (
     render_template,
     get_user_scores,
     render_markdown,
     execute_sql,
     md5
 )
-from .framework import (
+from ..framework import (
     login_required,
     zvms_route,
     url
 )
-from .misc import Permission
-from .api.user import Api as UserApi
-from .api.notice import Api as NoticeApi
+from ..kernel import notice as NoticeKernel
+from ..kernel import user as UserKernel
+from ..misc import Permission
 
 User = Blueprint('User', __name__, url_prefix='/user')
 
@@ -33,7 +33,7 @@ def login_get():
 
 @zvms_route(User, url.login)
 def login_post(userident: str, password: str):
-    info = UserApi.login(userident, md5(password.encode()))
+    info = UserKernel.login(userident, md5(password.encode()))
     session.update(dict(zip(
         ('userid', 'username', 'permission', 'classid'),
         info
@@ -52,8 +52,8 @@ def logout():
 def user_info(userid: int):
     manager = int(session.get('permission')) & (
         Permission.MANAGER | Permission.ADMIN)
-    username, permission, classid, class_name = UserApi.user_info(userid)
-    notices = NoticeApi.my_notices()
+    username, permission, classid, class_name = UserKernel.user_info(userid)
+    notices = NoticeKernel.my_notices()
     return render_template(
         'zvms/user.html',
         userid=userid,
@@ -74,7 +74,7 @@ def user_info(userid: int):
 @zvms_route(User, url.modify_password)
 @login_required
 def modify_password(target: int, old: str, new: str):
-    UserApi.modify_password(target, md5(old.encode()), md5(new.encode()))
+    UserKernel.modify_password(target, md5(old.encode()), md5(new.encode()))
     return render_template('zvms/success.html', msg='修改密码成功')
 
 
@@ -90,7 +90,7 @@ def class_list():
 @zvms_route(User, url('class')['classid'], 'GET')
 @login_required
 def class_info(classid: int):
-    name, members = UserApi.class_info(classid)
+    name, members = UserKernel.class_info(classid)
     return render_template(
         'zvms/class.html',
         name=name,

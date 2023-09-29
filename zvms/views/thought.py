@@ -8,25 +8,26 @@ from flask import (
     redirect,
 )
 
-from .util import (
+from ..util import (
     render_template,
     render_markdown,
     get_user_scores,
     execute_sql,
     pagination
 )
-from .framework import (
+from ..framework import (
     login_required,
     permission,
     zvms_route,
     url
 )
-from .misc import (
+from ..misc import (
     ThoughtStatus,
     Permission,
     VolType
 )
-from .api.thought import Api as ThoughtApi, SelectResult
+from ..kernel import thought as ThoughtKernel
+from ..kernel.thought import SelectResult
 
 Thought = Blueprint('Thought', __name__, url_prefix='/thought')
 
@@ -72,8 +73,8 @@ def select_thoughts(result: SelectResult, page: int, base_url: str):
 @permission(Permission.MANAGER | Permission.AUDITOR)
 def list_thoughts(page: int = 0):
     return select_thoughts(
-        ThoughtApi.list_thoughts(page), 
-        page, 
+        ThoughtKernel.list_thoughts(page),
+        page,
         '/thought/list'
     )
 
@@ -82,7 +83,7 @@ def list_thoughts(page: int = 0):
 @login_required
 def my_thoughts(page: int = 0):
     return select_thoughts(
-        ThoughtApi.my_thoughts(page),
+        ThoughtKernel.my_thoughts(page),
         page,
         '/thought/me'
     )
@@ -93,7 +94,7 @@ def my_thoughts(page: int = 0):
 @permission(Permission.AUDITOR | Permission.MANAGER)
 def unaudited_thoughts(page: int = 0):
     return select_thoughts(
-        ThoughtApi.unaudited_thoutghts(page),
+        ThoughtKernel.unaudited_thoutghts(page),
         page,
         '/thought/unaudited'
     )
@@ -113,7 +114,7 @@ def thought_info(volid: int, userid: int):
         reward,
         expected_reward,
         pictures
-    ) = ThoughtApi.thought_info(volid, userid)
+    ) = ThoughtKernel.thought_info(volid, userid)
     return render_template(
         'zvms/thought/thought.html',
         userid=userid,
@@ -135,11 +136,11 @@ def thought_info(volid: int, userid: int):
 @login_required
 def edit_thought_get(volid: int, userid: int):
     (
-        volname, 
-        status, 
-        thought, 
+        volname,
+        status,
+        thought,
         pictures
-    ) = ThoughtApi.prepare_edit_thought(volid, userid)
+    ) = ThoughtKernel.prepare_edit_thought(volid, userid)
     return render_template(
         'zvms/thought/edit.html',
         userid=userid,
@@ -154,11 +155,11 @@ def edit_thought_get(volid: int, userid: int):
 @zvms_route(Thought, url['volid']['userid'].edit)
 @login_required
 def edit_thought(
-    volid: int, 
-    userid: int, 
-    thought: str, 
-    pictures: list[str], 
-    files: list[FileStorage], 
+    volid: int,
+    userid: int,
+    thought: str,
+    pictures: list[str],
+    files: list[FileStorage],
     submit: bool
 ):
     files = [
@@ -166,7 +167,7 @@ def edit_thought(
         for file in files
         if file.filename
     ]
-    ThoughtApi.edit_thought(
+    ThoughtKernel.edit_thought(
         volid,
         userid,
         thought,
@@ -181,7 +182,7 @@ def edit_thought(
 @login_required
 @permission(Permission.CLASS)
 def first_audit(volid: int, userid: int):
-    ThoughtApi.first_audit(volid, userid)
+    ThoughtKernel.first_audit(volid, userid)
     return redirect(f'/thought/{volid}/{userid}')
 
 
@@ -189,7 +190,7 @@ def first_audit(volid: int, userid: int):
 @login_required
 @permission(Permission.AUDITOR | Permission.MANAGER)
 def accept_thought(volid: int, userid: int, reward: int):
-    ThoughtApi.accept_thought(volid, userid, reward)
+    ThoughtKernel.accept_thought(volid, userid, reward)
     return redirect(f'/thought/{volid}/{userid}')
 
 
@@ -197,13 +198,13 @@ def accept_thought(volid: int, userid: int, reward: int):
 @login_required
 @permission(Permission.AUDITOR | Permission.MANAGER)
 def reject_thought(volid: int, userid: int):
-    ThoughtApi.reject_thought(volid, userid)
+    ThoughtKernel.reject_thought(volid, userid)
     return redirect(f'/thought/{volid}/{userid}')
 
 
-@zvms_route(Thought, url['volid']['userid'].audit.final.pitchback)
+@zvms_route(Thought, url['volid']['userid'].audit.final.spike)
 @login_required
 @permission(Permission.AUDITOR | Permission.MANAGER)
-def pitchback_thought(volid: int, userid: int):
-    ThoughtApi.pitchback_thought(volid, userid)
+def spike_thought(volid: int, userid: int):
+    ThoughtKernel.spike_thought(volid, userid)
     return redirect(f'/thought/{volid}/{userid}')

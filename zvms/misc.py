@@ -86,7 +86,7 @@ class ThoughtStatus(ZvmsEnum):
     WAITING_FOR_FINAL_AUDIT = 4
     ACCEPTED = 5
     REJECTED = 6
-    PITCHBACK = 7
+    SPIKE = 7
 
     __tostr__ = [
         '等待报名审核',

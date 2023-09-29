@@ -1,9 +1,0 @@
-{% extends "toolkit/base.html" %}
-{% block container %}
-<h2>共有{{items|length}}项搜索结果</h2>
-<ul class="list-group list-group-flush">
-    {% for i in items %}
-    <li class="list-group-item"><a href="/toolkit/dict/zh?word={{i}}">{{i}}</a></li>
-    {% endfor %}
-</ul>
-{% endblock %}

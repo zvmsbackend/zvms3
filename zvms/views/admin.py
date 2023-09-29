@@ -3,15 +3,15 @@ from flask import (
     redirect
 )
 
-from .framework import (
+from ..framework import (
     login_required,
     permission,
     zvms_route,
     url
 )
-from .misc import Permission, permission2str
-from .api.admin import Api as AdminApi
-from .util import render_template
+from ..misc import Permission, permission2str
+from ..kernel import admin as AdminKernel
+from ..util import render_template
 
 Admin = Blueprint('Admin', __name__, url_prefix='/admin')
 
@@ -27,7 +27,7 @@ def index():
 @login_required
 @permission(Permission.ADMIN)
 def alter_permission(userident: str, perm: list[int]):
-    userid = AdminApi.alter_permission(userident, perm)
+    userid = AdminKernel.alter_permission(userident, perm)
     return redirect(f'/user/{userid}')
 
 
@@ -35,5 +35,5 @@ def alter_permission(userident: str, perm: list[int]):
 @login_required
 @permission(Permission.ADMIN)
 def login(userident: str):
-    AdminApi.login(userident)
+    AdminKernel.login(userident)
     return redirect('/user/login')

@@ -18,7 +18,7 @@ if __name__ == '__main__':
     server = HTTPServer(wsgi)
     server.listen(args.port)
     if args.logger_file is None:
-        logger.info('Server started')
+        logger.info('Server started.')
     else:
         logging.basicConfig(
             filename=args.logger_file,
