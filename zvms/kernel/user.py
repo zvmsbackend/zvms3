@@ -8,7 +8,7 @@ from ..misc import (
 )
 
 
-def login(userident: str, password: str) -> list[tuple[int, str, int, int]]:
+def login(userident: str, password: str) -> tuple[int, str, int, int]:
     info = execute_sql(
         'SELECT userid, username, permission, classid '
         'FROM user '

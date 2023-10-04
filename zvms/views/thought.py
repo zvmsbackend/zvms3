@@ -46,7 +46,7 @@ def data_csv():
     ).fetchall()
     writer.writerow(['学号', '姓名', '班级', '校内', '校外', '实践', '合计'])
     writer.writerows(
-        (id, name, cls, *(d.get(i, 0) for i in range(1, 4)), sum(d.values()))
+        (id, name, cls, *(d.get(i, 0) / 60 for i in range(1, 4)), sum(d.values()) / 60)
         for id, name, cls in users
         if (d := get_user_scores(id)) or True
     )

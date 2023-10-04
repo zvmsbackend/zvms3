@@ -1,6 +1,6 @@
 from functools import reduce
+from operator import or_
 
-from sqlalchemy import or_
 from flask import session
 
 from ..framework import ZvmsError

@@ -18,28 +18,34 @@ from ..kernel import user as UserKernel
 User = Blueprint('User', __name__, url_prefix='/user')
 
 
+class UserInfo(TypedDict):
+    username: str
+    permission: Permission
+    classId: int
+    className: str
+
+
+class UserInfoMinus(TypedDict):
+    username: str
+    permission: Permission
+    classId: int
+
 
 @api_route(User, url.login)
-def user_login(userident: str, password: str) -> None:
+def user_login(userident: str, password: str) -> UserInfoMinus:
     """
 用户登录  
 用户信息须通过getUserInfo获取  
 `userident`既可以是用户名, 又可以是用户ID. 虽然id和ident其实是同一个东西, 但后者更不明觉厉
     """
-    UserKernel.login(userident, password)
+    _, *info = UserKernel.login(userident, password)
+    return dump_object(info, UserInfoMinus)
 
 
 @api_route(User, url.logout)
 def user_logout() -> None:
     """登出"""
     session.clear()
-
-
-class UserInfo(TypedDict):
-    username: str
-    permission: Permission
-    classId: int
-    className: str
 
 
 @api_route(User, url['userid'], 'GET')

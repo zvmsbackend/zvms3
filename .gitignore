@@ -10,3 +10,4 @@ doc
 weather-api-key
 ecdict.csv
 toolkit-settings.json
+*.csv

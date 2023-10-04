@@ -40,11 +40,18 @@ def main() -> None:
         (id, name, generate_password(args.password_length), cls)
         for id, name, cls in users
     ]
-    cursor.executemany(
-        'INSERT INTO user(userid, username, password, permission, classid) '
-        'VALUES(?, ?, ?, 0, ?)',
-        users
-    )
+    for user in users:
+        try:
+            cursor.execute(
+                'INSERT INTO user(userid, username, password, permission, classid) '
+                'VALUES(?, ?, ?, 0, ?)',
+                user
+            )
+        except sqlite3.IntegrityError as ex:
+            msg, = ex.args
+            if 'UNIQUE' in msg:
+                print(user, msg)
+                exit(1)
     open(args.output_password, 'w', encoding='utf-8').write(
         '\n'.join(
             f'{id}, {name}, {pwd}'
