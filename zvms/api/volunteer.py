@@ -120,7 +120,7 @@ def create_volunteer(
     time: date,
     reward: int,
     classes: metalist[Class, 'required']
-) -> None:
+) -> int:
     """创建校内义工"""
     return VolKernel.create_volunteer(
         name,
@@ -139,7 +139,7 @@ def create_appointed_volunteer(
     type: Literal[VolType.INSIDE, VolType.OUTSIDE],
     reward: int,
     participants: metalist[str, 'required']
-) -> None:
+) -> int:
     """创建指定义工"""
     return VolKernel.create_appointed_volunteer(
         name,
@@ -174,7 +174,7 @@ def create_special_volunteer(
     type: VolType,
     reward: int,
     participants: list[str]
-) -> None:
+) -> int:
     """创建特殊义工"""
     return VolKernel.create_special_volunteer(
         name,
@@ -191,7 +191,7 @@ def create_special_volunteer_ex(
     name: str,
     type: VolType,
     participants: list[ParticipantWithReward]
-) -> None:
+) -> int:
     """创建特殊义工, 但是每个人的时间不一样"""
     return VolKernel.create_special_volunteer_ex(
         name,

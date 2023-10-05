@@ -99,7 +99,7 @@ const permissionToString = {{
 ))
     
 
-def search_structs() -> set[TypedDict]:
+def search_structs() -> list[TypedDict]:
     ret = set()
     def search(t: type) -> None:
         if is_typeddict(t):
@@ -108,12 +108,14 @@ def search_structs() -> set[TypedDict]:
                 search(v)
         elif isinstance(t, GenericAlias):
             search(*t.__args__)
+        elif isinstance(t, _ListValidatorMaker):
+            search(t.generic_argument)
 
     for api in Api.apis:
-        for param in api.params:
+        for param in api.params.values():
             search(param)
         search(api.returns)
-    return ret
+    return sorted(ret, key=attrgetter('__name__'))
     
 
 structs = search_structs()

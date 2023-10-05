@@ -7,7 +7,6 @@ from flask import (
 
 from ..util import (
     render_template,
-    get_user_scores,
     render_markdown,
     execute_sql,
     md5
@@ -61,7 +60,7 @@ def user_info(userid: int):
         permission=str(Permission(permission)),
         classid=classid,
         class_name=class_name,
-        scores=get_user_scores(userid),
+        scores=UserKernel.get_time_sums(userid),
         is_self=userid == session.get('userid'),
         notices=[
             (i, title, render_markdown(content), *spam)

@@ -20,7 +20,7 @@
             class="scrollspy-example-2" tabindex="0">
             {% for blueprint in blueprints %}
             <h4 id="{{blueprint.name}}">{{blueprint.name}}</h4>
-            <p>URL前缀: /api<pre>{{blueprint.url_prefix}}</pre></p>
+            <p>URL前缀: <pre>/api{{blueprint.url_prefix}}</pre></p>
             {% for api in blueprint.__apis__ %}
             <div id="{{blueprint.name}}-{{api.name}}" class="card card-body">
                 <h4 class="card-title">{{snake2camel(api.name)}}</h4>

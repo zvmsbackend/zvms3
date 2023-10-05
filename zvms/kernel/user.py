@@ -66,6 +66,17 @@ def modify_password(target: int, old: str, new: str) -> None:
     )
 
 
+def get_time_sums(userid: int) -> dict[int, int]:
+    return dict(execute_sql(
+        'SELECT vol.type, SUM(uv.reward) '
+        'FROM user_vol AS uv '
+        'JOIN volunteer AS vol ON vol.id = uv.volid '
+        'WHERE uv.userid = :userid AND uv.status = 5 '
+        'GROUP BY vol.type',
+        userid=userid
+    ).fetchall())
+
+
 def get_classes() -> list[tuple[int, str]]:
     return execute_sql('SELECT id, name FROM class').fetchall()
 

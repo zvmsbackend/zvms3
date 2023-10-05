@@ -69,6 +69,20 @@ def modify_password(
     UserKernel.modify_password(target, oldPassword, newPassword)
 
 
+class UserSums(TypedDict):
+    inside: int
+    outside: int
+    large: int
+
+
+@api_route(User, url['userid'].time, 'GET')
+@api_login_required
+def get_user_time(userid: int) -> UserSums:
+    """获取用户义工时间"""
+    sums = UserKernel.get_time_sums(userid)
+    return dump_object([sums.get(i + 1, 0) for i in range(3)], UserSums)
+
+
 class ClassIdAndName(TypedDict):
     id: int
     name: str

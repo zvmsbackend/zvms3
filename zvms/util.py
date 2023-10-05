@@ -74,17 +74,6 @@ def render_markdown(content: str) -> str:
     )
 
 
-def get_user_scores(userid: int) -> dict[int, int]:
-    return dict(execute_sql(
-        'SELECT vol.type, SUM(uv.reward) '
-        'FROM user_vol AS uv '
-        'JOIN volunteer AS vol ON vol.id = uv.volid '
-        'WHERE uv.userid = :userid AND uv.status = 5 '
-        'GROUP BY vol.type',
-        userid=userid
-    ).fetchall())
-
-
 def three_days_later() -> date:
     return date.today() + timedelta(days=3)
 

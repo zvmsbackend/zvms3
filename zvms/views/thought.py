@@ -11,7 +11,6 @@ from flask import (
 from ..util import (
     render_template,
     render_markdown,
-    get_user_scores,
     execute_sql,
     pagination
 )
@@ -27,6 +26,7 @@ from ..misc import (
     VolType
 )
 from ..kernel import thought as ThoughtKernel
+from ..kernel import user as UserKernel
 from ..kernel.thought import SelectResult
 
 Thought = Blueprint('Thought', __name__, url_prefix='/thought')
@@ -48,7 +48,7 @@ def data_csv():
     writer.writerows(
         (id, name, cls, *(d.get(i, 0) / 60 for i in range(1, 4)), sum(d.values()) / 60)
         for id, name, cls in users
-        if (d := get_user_scores(id)) or True
+        if (d := UserKernel.get_time_sums(id)) or True
     )
     return send_file(io.BytesIO(file.getvalue().encode()), download_name='data.csv')
 

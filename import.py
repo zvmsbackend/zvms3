@@ -5,10 +5,14 @@ import random
 import csv
 
 
-def generate_password(length: int) -> str:
+def md5ify(bytes: bytes) -> str:
     md5 = hashlib.md5()
-    md5.update(random.randbytes(8))
-    return md5.hexdigest()[:length]
+    md5.update(bytes)
+    return md5.hexdigest()
+
+
+def generate_password(length: int) -> str:
+    return md5ify(random.randbytes(8))[:length]
 
 
 def main() -> None:
@@ -40,17 +44,17 @@ def main() -> None:
         (id, name, generate_password(args.password_length), cls)
         for id, name, cls in users
     ]
-    for user in users:
+    for id, name, pwd, cls in users:
         try:
             cursor.execute(
                 'INSERT INTO user(userid, username, password, permission, classid) '
                 'VALUES(?, ?, ?, 0, ?)',
-                user
+                (id, name, md5ify(pwd), cls)
             )
         except sqlite3.IntegrityError as ex:
             msg, = ex.args
             if 'UNIQUE' in msg:
-                print(user, msg)
+                print(id, msg)
                 exit(1)
     open(args.output_password, 'w', encoding='utf-8').write(
         '\n'.join(
