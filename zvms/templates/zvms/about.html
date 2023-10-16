@@ -14,9 +14,38 @@
     <span class="f">S</span>ystem
 </p>
 <h2>关于开发者</h2>
-<p>本项目由 <small><a id="a"><small>qnc</small></a></small> 开发</p>
-<p>源码<a href="#">https://github.com/zvmsbackend/zvms-bootstrap</a></p>
-<img src="https://img.shields.io/github/stars/zvmsbackend/zvms-bootstrap?logo=github">
+<ul>
+    <li><b>V4</b>由
+        <span class="badge bg-{{random_color()}}">wcy</span>
+        <span class="badge bg-{{random_color()}}">byh</span>
+        <span class="badge bg-{{random_color()}}">zyq</span>
+        <span class="badge bg-{{random_color()}}">clc</span>
+        正在开发中, <a href="#">https://github.com/zvms/zvms4-frontend</a></li>
+    <li><b style="color: blue">V3</b>由
+        <span class="badge bg-{{random_color()}}">qnc</span>
+        开发, <a href="#">https://github.com/zvmsbackend/zvms3</a></li>
+    <li><b>V2</b>由
+        <span class="badge bg-{{random_color()}}">xtr</span>
+        <span class="badge bg-{{random_color()}}">qnc</span>
+        <span class="badge bg-{{random_color()}}">clc</span>
+        开发, <a href="#">https://github.com/zvms/zvms</a></li>
+    <li><b>V1</b>由
+        <span class="badge bg-{{random_color()}}">ljx</span>
+        <span class="badge bg-{{random_color()}}">zcy</span>
+        <span class="badge bg-{{random_color()}}">cc</span>
+        <span class="badge bg-{{random_color()}}">slc</span>
+        <span class="badge bg-{{random_color()}}">zsj</span>
+        <span class="badge bg-{{random_color()}}">hht</span>
+        <span class="badge bg-{{random_color()}}">xtr</span>
+        <span class="badge bg-{{random_color()}}">qnc</span>
+        开发, <a href="#">https://gitee.com/zvms/zvms-backend</a>, <a href="#">https://gitee.com/zvms/zvms-electron</a></li>
+    <li><b>V0</b>由
+        <span class="badge bg-{{random_color()}}">zzs</span>
+        开发, <a href="#">https://github.com/ZhangZisu/zvms</a><a href="#">https://github.com/ZhangZisu/zvms-frontend</a></li>
+</ul>
+<p>特别感谢<span class="badge bg-{{random_color()}}">hhj</span>提供的服务器, <span class="badge bg-{{random_color()}}">zsz</span>绘制的新版图标和<span class="badge bg-{{random_color()}}">zjr</span>的疯狂测试.</p>
+<p style="font-size: 50px; color: red">注意: 校外访问上述github链接时请务必使用合法方式</p>
+<img src="https://img.shields.io/github/stars/zvmsbackend/zvms3?logo=github">
 {% if _login %}
 <form action="/issue" method="POST">
     <textarea class="form-control" name="content" id="content" maxlength="64" rows="5" placeholder="反馈" required></textarea>

@@ -5,7 +5,7 @@ from flask import (
     session
 )
 
-from ..util import render_template
+from ..util import render_template, random_color
 from ..framework import (
     lengthedstr,
     login_required,
@@ -26,7 +26,8 @@ def index():
     return render_template(
         'zvms/about.html',
         issues_posted=issues_posted,
-        issues_today=issues_today
+        issues_today=issues_today,
+        random_color=random_color
     )
 
 

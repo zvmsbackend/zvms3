@@ -127,6 +127,7 @@ class ErrorCode(ZvmsEnum):
     PICTURE_NOT_EXISTS = 22
     FILE_DECODE_FAILS = 23
     THOUGHT_NOT_AUDITABLE = 24
+    INVALID_IMAGE_FILE = 25
 
     __tostr__ = [
         '无错误',
@@ -152,5 +153,6 @@ class ErrorCode(ZvmsEnum):
         '感想不可编辑',
         '图片{filename}不存在',
         '文件{filename}解码失败',
-        '感想不可审核'
+        '感想不可审核',
+        '非法图片文件'
     ]

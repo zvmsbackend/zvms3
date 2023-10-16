@@ -1,4 +1,4 @@
-from flask import Flask, redirect, send_file, make_response
+from flask import Flask, redirect, send_file
 from flask_cors import CORS
 
 from .toolkit import Toolkit

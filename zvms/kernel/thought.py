@@ -204,6 +204,11 @@ def edit_thought(
             filename=filename
         )
     for filename, data in files:
+        try:
+            data.decode()
+        except UnicodeEncodeError: ...
+        else:
+            raise ZvmsError(ErrorCode.INVALID_IMAGE_FILE)
         ext = filename.split('.')[-1]
         filename = f'{md5(data)}.{ext}'
         match execute_sql(
